@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1600" viewBox="0 0 1600 1600" role="img" aria-labelledby="title desc">
+  <title id="title">KorVix Gym</title>
+  <desc id="desc">Monograma KV com barra de treino, estilo minimal tech</desc>
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#12181f"/>
+      <stop offset="100%" stop-color="#0a0e13"/>
+    </linearGradient>
+    <linearGradient id="steelGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#eef2f6"/>
+      <stop offset="50%" stop-color="#d5dbe1"/>
+      <stop offset="100%" stop-color="#aab2bc"/>
+    </linearGradient>
+    <linearGradient id="cyanGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3cc7dd"/>
+      <stop offset="100%" stop-color="#1c9ac0"/>
+    </linearGradient>
+    <linearGradient id="plateGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#3a4048"/>
+      <stop offset="100%" stop-color="#20252c"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1600" height="1600" fill="url(#bgGrad)"/>
+
+  <!-- brilho ciano bem discreto -->
+  <circle cx="1180" cy="470" r="540" fill="#2fb9d4" opacity="0.05"/>
+
+  <!-- hairline interno, como os cards do app -->
+  <rect x="60" y="60" width="1480" height="1480" rx="360" fill="none" stroke="#ffffff" stroke-opacity="0.06" stroke-width="4"/>
+
+  <g transform="translate(800 815) scale(1.16) translate(-800 -720)">
+    <!-- barra -->
+    <g>
+      <rect x="455" y="710" width="690" height="18" rx="9" fill="url(#steelGrad)"/>
+      <rect x="1118" y="699" width="24" height="40" rx="6" fill="url(#cyanGrad)"/>
+      <rect x="458" y="699" width="24" height="40" rx="6" fill="url(#cyanGrad)"/>
+
+      <rect x="390" y="655" width="28" height="128" rx="6" fill="#dfe5ea"/>
+      <rect x="430" y="595" width="46" height="250" rx="8" fill="url(#plateGrad)" stroke="#6c7580" stroke-width="2"/>
+      <rect x="485" y="575" width="58" height="290" rx="9" fill="url(#plateGrad)" stroke="#6c7580" stroke-width="2"/>
+
+      <rect x="1182" y="655" width="28" height="128" rx="6" fill="#dfe5ea"/>
+      <rect x="1124" y="595" width="46" height="250" rx="8" fill="url(#plateGrad)" stroke="#6c7580" stroke-width="2"/>
+      <rect x="1057" y="575" width="58" height="290" rx="9" fill="url(#plateGrad)" stroke="#6c7580" stroke-width="2"/>
+    </g>
+
+    <!-- monograma KV -->
+    <g>
+      <path d="M720 520 L1030 520 L962 588 L860 588 L730 720 L858 848 L780 922 L622 764 L622 612 Z"
+            fill="url(#steelGrad)"/>
+      <path d="M506 520 L772 520 L702 590 L635 656 L635 810 L734 810 L734 920 L506 920 L506 661 L442 598 Z"
+            fill="url(#steelGrad)"/>
+      <path d="M900 610 L1022 610 L852 1010 L640 760 L730 760 L852 892 Z"
+            fill="url(#cyanGrad)"/>
+    </g>
+  </g>
+</svg>
