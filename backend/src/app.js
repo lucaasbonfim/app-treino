@@ -1,5 +1,9 @@
 require('dotenv').config();
 
+// Datas de treino e check-in seguem o dia civil do usuário, independentemente
+// do fuso padrão do servidor (o Render normalmente executa fora do horário de Brasília).
+process.env.TZ = process.env.APP_TIME_ZONE || 'America/Sao_Paulo';
+
 const express = require('express');
 const cors = require('cors');
 const authRoutes = require('./routes/auth.routes');

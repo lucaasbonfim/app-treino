@@ -2,6 +2,8 @@ import { useLayoutEffect, useMemo, useState } from 'react';
 import { ThemeContext } from './theme-context';
 
 const THEME_STORAGE_KEY = 'korvix-gym:theme';
+const DARK_THEME_COLOR = '#0c0f14';
+const LIGHT_THEME_COLOR = '#f6f8fa';
 
 function getInitialTheme() {
   try {
@@ -16,7 +18,7 @@ function applyDocumentTheme(theme) {
   document.documentElement.dataset.theme = theme;
   document.documentElement.style.colorScheme = theme;
   document.querySelector('meta[name="theme-color"]')
-    ?.setAttribute('content', dark ? '#02060b' : '#071018');
+    ?.setAttribute('content', dark ? DARK_THEME_COLOR : LIGHT_THEME_COLOR);
 }
 
 export function ThemeProvider({ children }) {

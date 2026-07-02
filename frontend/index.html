@@ -3,16 +3,57 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-    <meta name="theme-color" content="#071018" />
+    <meta name="theme-color" content="#0c0f14" />
+    <meta name="color-scheme" content="dark light" />
     <meta name="application-name" content="KorVix Gym" />
     <meta name="apple-mobile-web-app-title" content="KorVix Gym" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="format-detection" content="telephone=no" />
     <link rel="icon" href="/korvix-logo.svg" type="image/svg+xml" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <title>KorVix Gym</title>
+    <script>
+      (function () {
+        var root = document.documentElement;
+        var themeColor = document.querySelector('meta[name="theme-color"]');
+
+        try {
+          var theme = window.localStorage.getItem('korvix-gym:theme') === 'dark'
+            ? 'dark'
+            : 'light';
+
+          root.dataset.theme = theme;
+          root.style.colorScheme = theme;
+          themeColor?.setAttribute('content', theme === 'dark' ? '#0c0f14' : '#f6f8fa');
+        } catch (error) {
+          root.dataset.theme = 'light';
+          root.style.colorScheme = 'light';
+          themeColor?.setAttribute('content', '#f6f8fa');
+        }
+      })();
+    </script>
+    <style>
+      html,
+      body,
+      #root {
+        min-height: 100%;
+        background: #f6f8fa;
+      }
+
+      body {
+        margin: 0;
+      }
+
+      html[data-theme="dark"],
+      html[data-theme="dark"] body,
+      html[data-theme="dark"] #root {
+        background: #0c0f14;
+      }
+    </style>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600;700&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet" />
-    <title>KorVix Gym</title>
   </head>
   <body>
     <div id="root"></div>
