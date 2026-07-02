@@ -20,10 +20,32 @@ const app = express();
 const API = '/api';
 
 app.disable('x-powered-by');
+
+// Origens liberadas: desenvolvimento web (Vite/CRA), app Android/iOS via Capacitor,
+// e as URLs de produção configuradas por variável de ambiente (Render).
+const allowedOrigins = [
+    'http://localhost',
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'capacitor://localhost',
+    'https://localhost',
+    process.env.CORS_ORIGIN, // compatibilidade com a configuração anterior
+    process.env.FRONTEND_URL, // URL do frontend no Render
+].filter(Boolean);
+
 app.use(cors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    origin(origin, callback) {
+        // Sem cabeçalho Origin (apps nativos, curl, health checks) ou origem na lista: libera.
+        if (!origin || allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+        const error = new Error(`Origem não permitida pelo CORS: ${origin}`);
+        error.status = 403;
+        return callback(error);
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
 }));
 app.use(express.json({ limit: '1mb' }));
 
