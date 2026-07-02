@@ -1795,7 +1795,7 @@ option,
 .history-list {
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
+  gap: 0.65rem;
 }
 
 .history-card {
@@ -1810,25 +1810,14 @@ option,
   display: flex;
   width: 100%;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.9rem;
+  gap: 0.65rem;
+  padding: 0.85rem 0.9rem;
   color: var(--text);
   background: transparent;
   text-align: left;
 }
 
-.history-icon {
-  display: grid;
-  width: 2.8rem;
-  height: 2.8rem;
-  flex: 0 0 auto;
-  place-items: center;
-  border-radius: 0.9rem;
-  color: #34b8d0;
-  background: linear-gradient(135deg, #071018, #0b2633);
-}
-
-.history-summary > span:nth-child(2) {
+.history-card-copy {
   min-width: 0;
   flex: 1;
 }
@@ -1843,29 +1832,47 @@ option,
 }
 
 .history-summary small {
-  color: var(--primary);
-  font-size: 0.56rem;
-  font-style: normal;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.history-summary strong {
-  margin-top: 0.2rem;
-  font: 800 0.86rem "Manrope", sans-serif;
-}
-
-.history-summary em {
-  margin-top: 0.25rem;
+  margin-top: 0.22rem;
   color: var(--muted);
   font-size: 0.62rem;
   font-style: normal;
+  font-weight: 600;
+}
+
+.history-summary strong {
+  font: 800 0.9rem "Manrope", sans-serif;
+}
+
+.history-summary em {
+  margin-top: 0.32rem;
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-style: normal;
+  font-weight: 600;
+}
+
+.history-expand-icon {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 0.7rem;
+  color: var(--muted);
+  background: var(--container);
+}
+
+.history-expand-icon .material-symbols-outlined {
+  font-size: 1.1rem;
+}
+
+.history-card.expanded {
+  border-color: color-mix(in srgb, var(--primary) 32%, var(--border));
 }
 
 .history-details {
   border-top: 1px solid rgb(185 201 207 / 0.3);
-  padding: 0.4rem 0.9rem 0.9rem;
+  padding: 0 0.9rem 0.85rem;
 }
 
 .history-exercise {
@@ -2857,36 +2864,62 @@ option,
 }
 
 /* ===== Histórico: resumo, filtros, evolução ===== */
+.history-screen {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.8rem;
+  padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+}
+
+.history-overview {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 0.75rem;
+  background: var(--card);
+  box-shadow: var(--elev);
+}
+
+.history-overview-label {
+  display: block;
+  margin: 0 0 0.45rem 0.1rem;
+  color: var(--muted);
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .history-summary-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.6rem;
+  gap: 0.5rem;
 }
 
 .history-summary-card {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  border: 1px solid rgb(185 201 207 / 0.35);
-  border-radius: 1.1rem;
-  padding: 0.8rem;
-  background: var(--card);
-  box-shadow: 0 10px 26px rgb(7 16 24 / 0.06);
-}
-
-.history-summary-card.wide {
-  grid-column: 1 / -1;
+  gap: 0.5rem;
+  border: 0;
+  border-radius: 0.85rem;
+  padding: 0.6rem;
+  background: var(--container);
+  box-shadow: none;
 }
 
 .history-summary-icon {
   display: grid;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.1rem;
+  height: 2.1rem;
   flex: 0 0 auto;
   place-items: center;
-  border-radius: 0.8rem;
+  border-radius: 0.7rem;
   color: var(--primary);
   background: var(--primary-soft);
+}
+
+.history-summary-icon .material-symbols-outlined {
+  font-size: 1.05rem;
 }
 
 .history-summary-card > div {
@@ -2897,7 +2930,7 @@ option,
   display: block;
   overflow: hidden;
   color: var(--text);
-  font: 800 1.15rem "Manrope", sans-serif;
+  font: 800 1rem "Manrope", sans-serif;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -2906,24 +2939,59 @@ option,
   display: block;
   margin-top: 0.1rem;
   color: var(--muted);
-  font-size: 0.6rem;
+  font-size: 0.54rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
+.history-summary-secondary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+  gap: 0.45rem 0.7rem;
+  margin-top: 0.55rem;
+  padding: 0.55rem 0.1rem 0;
+  border-top: 1px solid var(--border);
+}
+
+.history-summary-secondary > span {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.3rem;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-summary-secondary .material-symbols-outlined {
+  flex: 0 0 auto;
+  color: var(--primary);
+  font-size: 0.9rem;
+}
+
+.history-summary-secondary strong {
+  overflow: hidden;
+  color: var(--text);
+  font-weight: 800;
+  text-overflow: ellipsis;
+}
+
 .history-tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.4rem;
-  border-radius: 1rem;
-  padding: 0.3rem;
+  gap: 0.3rem;
+  border-radius: 0.9rem;
+  padding: 0.25rem;
   background: var(--container);
 }
 
 .history-tab {
   display: flex;
-  min-height: 2.7rem;
+  min-height: 2.45rem;
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
@@ -2945,18 +3013,19 @@ option,
 
 .history-chips {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
+  gap: 0.35rem;
 }
 
 .history-chip {
-  min-height: 2.3rem;
+  min-width: 0;
+  min-height: 2rem;
+  flex: 1;
   border: 1px solid rgb(185 201 207 / 0.4);
   border-radius: 999px;
-  padding: 0.4rem 0.95rem;
+  padding: 0.3rem 0.65rem;
   color: var(--muted);
   background: var(--card);
-  font-size: 0.72rem;
+  font-size: 0.66rem;
   font-weight: 800;
   transition: color 150ms ease, background 150ms ease, border-color 150ms ease;
 }
@@ -2993,7 +3062,7 @@ option,
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  margin-top: 0.8rem;
+  margin-top: 0.7rem;
   border: 1px solid rgb(0 122 159 / 0.25);
   border-radius: 0.9rem;
   color: var(--primary);
@@ -3008,8 +3077,8 @@ option,
 /* Item de exercício reutilizado no card e no modal de detalhes */
 .session-exercise {
   display: flex;
-  gap: 0.65rem;
-  padding: 0.75rem 0;
+  gap: 0.6rem;
+  padding: 0.7rem 0;
   border-bottom: 1px solid rgb(185 201 207 / 0.25);
 }
 
@@ -3048,8 +3117,40 @@ option,
   font-weight: 700;
 }
 
+.session-exercise-summary {
+  margin: 0.3rem 0 0;
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.session-sets-toggle {
+  display: inline-flex;
+  min-height: 1.8rem;
+  align-items: center;
+  gap: 0.2rem;
+  margin-top: 0.35rem;
+  border-radius: 0.6rem;
+  padding: 0.2rem 0.45rem;
+  color: var(--primary);
+  background: var(--primary-soft);
+  font-size: 0.62rem;
+  font-weight: 800;
+}
+
+.session-sets-toggle .material-symbols-outlined {
+  font-size: 0.9rem;
+}
+
+.session-set-details {
+  margin-top: 0.35rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.25rem;
+}
+
 .session-set-lines {
-  margin: 0.5rem 0 0;
+  margin: 0;
   padding: 0;
   list-style: none;
 }
@@ -3059,7 +3160,7 @@ option,
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  padding: 0.28rem 0;
+  padding: 0.3rem 0;
   color: var(--muted);
   font-size: 0.68rem;
 }
@@ -3079,7 +3180,7 @@ option,
 }
 
 .session-set-empty {
-  margin: 0.4rem 0 0;
+  margin: 0.35rem 0 0;
   color: var(--muted);
   font-size: 0.66rem;
 }
@@ -3210,13 +3311,13 @@ option,
 .evolution-list {
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
+  gap: 0.65rem;
 }
 
 .evolution-card {
   border: 1px solid rgb(185 201 207 / 0.35);
   border-radius: 1.2rem;
-  padding: 0.9rem;
+  padding: 0.85rem;
   background: var(--card);
   box-shadow: 0 10px 28px rgb(7 16 24 / 0.06);
 }
@@ -3225,7 +3326,7 @@ option,
   display: flex;
   align-items: center;
   gap: 0.65rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.65rem;
 }
 
 .evolution-icon {
@@ -3274,12 +3375,12 @@ option,
 .evolution-stats {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
+  gap: 0.45rem;
 }
 
 .evolution-stats > div {
   border-radius: 0.8rem;
-  padding: 0.6rem 0.7rem;
+  padding: 0.58rem 0.65rem;
   background: var(--container);
 }
 
@@ -3297,6 +3398,32 @@ option,
   margin-top: 0.2rem;
   color: var(--text);
   font: 800 0.86rem "Manrope", sans-serif;
+}
+
+.history-empty-state {
+  min-height: 14rem;
+}
+
+.history-empty-action {
+  display: inline-flex;
+  min-height: 2.7rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  margin-top: 0.15rem;
+  padding: 0.65rem 1rem;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.history-empty-action .material-symbols-outlined {
+  font-size: 1rem;
+}
+
+@media (max-width: 370px) {
+  .history-summary-secondary {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ===== Biblioteca de exercícios ===== */
@@ -3612,7 +3739,6 @@ body { background: var(--surface); }
 .history-card,
 .run-exercise-card,
 .evolution-card,
-.history-summary-card,
 .lib-card,
 .profile-section,
 .run-notes {
@@ -4498,4 +4624,630 @@ body { background: var(--surface); }
 
 .history-archived-tag .material-symbols-outlined {
   font-size: 0.78rem;
+}
+
+/* ==========================================================================
+   Agenda semanal — card "Hoje" + tela da semana
+   ========================================================================== */
+
+/* Card "Hoje" na tela inicial */
+.today-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 0.9rem 1rem;
+  background: var(--card);
+  box-shadow: var(--elev);
+}
+
+.today-card-workout {
+  border-color: color-mix(in srgb, var(--primary) 40%, var(--border));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--primary-soft) 60%, var(--card)), var(--card));
+}
+
+.today-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.today-card-head .eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.today-card-head .eyebrow .material-symbols-outlined {
+  font-size: 0.95rem;
+}
+
+.today-card-config {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.28rem 0.6rem;
+  color: var(--primary);
+  background: var(--container);
+  font-size: 0.64rem;
+  font-weight: 800;
+}
+
+.today-card-config .material-symbols-outlined {
+  font-size: 0.95rem;
+}
+
+.today-card-body {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.today-card-icon {
+  display: grid;
+  flex: 0 0 auto;
+  width: 3rem;
+  height: 3rem;
+  place-items: center;
+  border-radius: var(--radius);
+  color: #04121a;
+  background: linear-gradient(160deg, var(--primary-bright), var(--primary));
+}
+
+.today-card-icon .material-symbols-outlined {
+  font-size: 1.6rem;
+}
+
+.today-card-icon.done {
+  background: linear-gradient(160deg, var(--success), color-mix(in srgb, var(--success) 70%, #000));
+}
+
+.today-card-icon.rest {
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.today-card-icon.empty {
+  color: var(--muted);
+  background: var(--container);
+}
+
+.today-card-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.today-card-copy strong {
+  color: var(--text);
+  font: 800 1.05rem "Manrope", sans-serif;
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.today-card-copy small {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.today-start-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 2.8rem;
+  border-radius: var(--radius);
+  color: #04121a;
+  background: linear-gradient(180deg, var(--primary-bright), var(--primary));
+  font: 800 0.82rem "Manrope", sans-serif;
+  transition: transform 150ms ease;
+}
+
+.today-start-button:active {
+  transform: scale(0.98);
+}
+
+.today-start-button:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.today-start-button .material-symbols-outlined {
+  font-size: 1.2rem;
+}
+
+.today-start-button.ghost {
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.today-card-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  color: var(--success);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.today-card-note .material-symbols-outlined {
+  font-size: 1rem;
+}
+
+.today-card-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+/* Vizinhos do dia: ontem / amanhã */
+.today-neighbors {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin-top: 0.1rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--border);
+}
+
+.today-neighbor {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.today-neighbor + .today-neighbor {
+  padding-left: 0.6rem;
+  border-left: 1px solid var(--border);
+}
+
+.today-neighbor-when {
+  color: var(--muted);
+  font-size: 0.58rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.today-neighbor-name {
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Resumo da agenda (planejado / descanso) */
+.schedule-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+.schedule-summary > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 0.7rem 0.9rem;
+  background: var(--card);
+  box-shadow: var(--elev);
+}
+
+.schedule-summary-value {
+  color: var(--primary);
+  font: 800 1.4rem "Manrope", sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+.schedule-summary-label {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.schedule-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.schedule-hint .material-symbols-outlined {
+  color: var(--primary);
+  font-size: 1rem;
+}
+
+/* Lista dos dias da semana */
+.schedule-week {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.schedule-day {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 0.65rem 0.8rem;
+  text-align: left;
+  background: var(--card);
+  box-shadow: var(--elev);
+  transition: transform 150ms ease, border-color 150ms ease;
+}
+
+.schedule-day:active {
+  transform: scale(0.99);
+}
+
+.schedule-day.is-today {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary-soft) 45%, var(--card));
+}
+
+.schedule-day-dow {
+  display: grid;
+  flex: 0 0 auto;
+  width: 2.6rem;
+  height: 2.6rem;
+  place-items: center;
+  border-radius: var(--radius);
+  color: var(--muted);
+  background: var(--container);
+  font: 800 0.72rem "Manrope", sans-serif;
+  text-transform: uppercase;
+}
+
+.schedule-day.is-today .schedule-day-dow {
+  color: #04121a;
+  background: linear-gradient(160deg, var(--primary-bright), var(--primary));
+}
+
+.schedule-day-icon {
+  display: grid;
+  flex: 0 0 auto;
+  width: 2.2rem;
+  height: 2.2rem;
+  place-items: center;
+  border-radius: var(--radius);
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.schedule-day-icon .material-symbols-outlined {
+  font-size: 1.2rem;
+}
+
+.schedule-day-icon.rest {
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.schedule-day-icon.empty {
+  color: var(--muted);
+  background: var(--container);
+}
+
+.schedule-day-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.schedule-day-main strong {
+  color: var(--text);
+  font: 700 0.9rem "Manrope", sans-serif;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.schedule-day-main strong.muted {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.schedule-day-main small {
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-weight: 600;
+}
+
+.schedule-day-today {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 0.15rem 0.5rem;
+  color: var(--primary);
+  background: var(--primary-soft);
+  font-size: 0.58rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.schedule-day-source {
+  flex: 0 0 auto;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.15rem 0.5rem;
+  color: var(--muted);
+  background: var(--container);
+  font-size: 0.56rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.group-empty-hint {
+  margin: 0 0 0.2rem;
+  padding: 0.1rem 0.1rem 0.4rem;
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+/* Dias agendados no card de treino */
+.workout-days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.workout-days em {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.12rem 0.42rem;
+  color: var(--primary);
+  background: var(--primary-soft);
+  font: 800 0.56rem "Manrope", sans-serif;
+  font-style: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.workout-days em.empty {
+  color: var(--muted);
+  background: var(--container);
+}
+
+/* Grade de seleção de dias (modal por treino) */
+.day-toggle-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.35rem;
+}
+
+.day-toggle {
+  display: grid;
+  place-items: center;
+  min-height: 2.6rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--muted);
+  background: var(--card);
+  font: 800 0.66rem "Manrope", sans-serif;
+  text-transform: uppercase;
+  transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+}
+
+.day-toggle:active {
+  transform: scale(0.95);
+}
+
+.day-toggle.selected {
+  border-color: transparent;
+  color: #04121a;
+  background: linear-gradient(160deg, var(--primary-bright), var(--primary));
+}
+
+.day-toggle:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.schedule-day-arrow {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 1.2rem;
+}
+
+/* Badge "Descanso" */
+.rest-day-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  color: var(--primary);
+  background: var(--primary-soft);
+  font-size: 0.6rem;
+  font-weight: 800;
+}
+
+.rest-day-badge .material-symbols-outlined {
+  font-size: 0.85rem;
+}
+
+/* Modal de seleção de treino do dia */
+.schedule-select {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.schedule-select-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 45vh;
+  overflow-y: auto;
+}
+
+.schedule-select-empty {
+  margin: 0;
+  padding: 0.8rem;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.schedule-option {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.6rem 0.7rem;
+  text-align: left;
+  background: var(--card);
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.schedule-option:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.schedule-option.selected {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary-soft) 50%, var(--card));
+}
+
+.schedule-option-icon {
+  display: grid;
+  flex: 0 0 auto;
+  width: 2.2rem;
+  height: 2.2rem;
+  place-items: center;
+  border-radius: var(--radius);
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.schedule-option-icon .material-symbols-outlined {
+  font-size: 1.2rem;
+}
+
+.schedule-option.danger .schedule-option-icon {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 14%, var(--card));
+}
+
+.schedule-option-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.schedule-option-copy strong {
+  color: var(--text);
+  font: 700 0.86rem "Manrope", sans-serif;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.schedule-option.danger .schedule-option-copy strong {
+  color: var(--danger);
+}
+
+.schedule-option-copy small {
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.schedule-option-check {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-size: 1.25rem;
+}
+
+.schedule-option.selected .schedule-option-check {
+  color: var(--primary);
+}
+
+/* Resumo da agenda dentro do progresso */
+.plan-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.plan-summary-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.plan-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.4rem;
+}
+
+.plan-summary-grid > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.55rem 0.3rem;
+  background: var(--card);
+}
+
+.plan-summary-grid strong {
+  color: var(--text);
+  font: 800 1.15rem "Manrope", sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+.plan-summary-grid small {
+  color: var(--muted);
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.plan-summary-grid .done strong {
+  color: var(--success);
+}
+
+.plan-summary-grid .pending strong {
+  color: var(--primary);
 }

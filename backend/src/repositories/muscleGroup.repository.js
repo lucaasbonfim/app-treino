@@ -25,6 +25,21 @@ async function nextOrder(workoutId) {
     return Number(result?.max ?? -1) + 1;
 }
 
+// A seção "default" (invisível) que segura os exercícios soltos de um treino.
+function findDefaultByWorkout(workoutId, connection = db) {
+    return connection('workout_muscle_groups')
+        .where({ workout_id: workoutId, is_default: true })
+        .first();
+}
+
+// Mantém o nome da seção default igual ao título do treino (usado no snapshot
+// das sessões / evolução).
+function renameDefault(workoutId, name, connection = db) {
+    return connection('workout_muscle_groups')
+        .where({ workout_id: workoutId, is_default: true })
+        .update({ name: String(name).slice(0, 80), updated_at: connection.fn.now() });
+}
+
 async function create(data) {
     const [group] = await db('workout_muscle_groups').insert(data).returning('*');
     return { ...group, exercises: [] };
@@ -47,5 +62,13 @@ async function removeForUser(id, userId) {
     return db('workout_muscle_groups').where({ id }).del();
 }
 
-module.exports = { findForUser, nextOrder, create, updateForUser, removeForUser };
+module.exports = {
+    findForUser,
+    nextOrder,
+    findDefaultByWorkout,
+    renameDefault,
+    create,
+    updateForUser,
+    removeForUser,
+};
 

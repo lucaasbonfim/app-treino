@@ -15,7 +15,7 @@ export default function GroupForm({ group, onSubmit, onClose }) {
       await onSubmit({ name });
       onClose();
     } catch (requestError) {
-      setError(errorMessage(requestError, 'Não foi possível salvar o grupo.'));
+      setError(errorMessage(requestError, 'Não foi possível salvar a seção.'));
     } finally {
       setSaving(false);
     }
@@ -23,20 +23,20 @@ export default function GroupForm({ group, onSubmit, onClose }) {
 
   return (
     <Modal
-      title={group ? 'Editar grupo' : 'Adicionar grupo'}
-      subtitle="Organize os exercícios por região muscular."
+      title={group ? 'Editar seção' : 'Adicionar seção'}
+      subtitle="Divida o treino em partes (ex.: Superiores / Inferiores)."
       onClose={onClose}
     >
       <form className="form-stack" onSubmit={submit}>
         <label className="field">
-          <span>Grupo muscular</span>
+          <span>Nome da seção</span>
           <input
             autoFocus
             required
             maxLength={80}
             value={name}
             onChange={(event) => setName(event.target.value)}
-            placeholder="Ex.: Peito"
+            placeholder="Ex.: Superiores"
           />
         </label>
         {error && <p className="error-banner">{error}</p>}

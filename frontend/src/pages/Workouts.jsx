@@ -1,34 +1,50 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import ActionSheet from '../components/ActionSheet';
 import AppShell from '../components/AppShell';
+import DaySelectModal from '../components/DaySelectModal';
 import Icon from '../components/Icon';
-import WeeklyProgressCard from '../components/WeeklyProgressCard';
 import WorkoutStatusBadge from '../components/WorkoutStatusBadge';
 import { EmptyView, LoadingView } from '../components/StatusView';
-import { apiCache, workoutService } from '../services';
+import { apiCache, scheduleService, workoutService } from '../services';
 import { errorMessage } from '../services/api';
-import { dayName } from '../utils/days';
+import { shortDayName, sortDaysMonFirst } from '../utils/days';
 import { workoutIcon } from '../utils/workoutIcons';
-import { exerciseCount, groupCount } from '../utils/pluralize';
+import { exerciseCount, sectionCount } from '../utils/pluralize';
+import { namedSections, workoutSubtitle } from '../utils/workoutSections';
+
+// Dias (agenda) em que cada treino aparece, derivados da semana resolvida.
+function buildDaysByWorkout(schedule) {
+  const map = new Map();
+  for (const day of schedule?.days || []) {
+    for (const workout of day.workouts || []) {
+      const list = map.get(workout.id) || [];
+      list.push(day.day_of_week);
+      map.set(workout.id, list);
+    }
+  }
+  for (const [key, values] of map) map.set(key, sortDaysMonFirst(values));
+  return map;
+}
 
 export default function Workouts() {
-  const [initialSnapshot] = useState(() => ({
-    workouts: apiCache.getArray('/workouts'),
-    ready: apiCache.has('/workouts'),
-  }));
-  const [workouts, setWorkouts] = useState(() => initialSnapshot.workouts);
-  const [loading, setLoading] = useState(() => !initialSnapshot.ready);
+  const [workouts, setWorkouts] = useState(() => apiCache.getArray('/workouts'));
+  const [schedule, setSchedule] = useState(() => apiCache.getData('/schedule') || null);
+  const [loading, setLoading] = useState(() => !apiCache.has('/workouts'));
   const [error, setError] = useState('');
   const [actionWorkout, setActionWorkout] = useState(null);
+  const [daysModalWorkout, setDaysModalWorkout] = useState(null);
   const navigate = useNavigate();
 
   const load = useCallback(async (options) => {
-    if (!apiCache.has('/workouts')) setLoading(true);
-    setError('');
     try {
-      const { data } = await workoutService.list(options);
-      setWorkouts(data);
+      const [workoutsResult, scheduleResult] = await Promise.all([
+        workoutService.list(options),
+        scheduleService.list(options),
+      ]);
+      setError('');
+      setWorkouts(workoutsResult.data);
+      setSchedule(scheduleResult.data);
     } catch (requestError) {
       setError(errorMessage(requestError, 'Não foi possível carregar os treinos.'));
     } finally {
@@ -38,34 +54,27 @@ export default function Workouts() {
 
   useEffect(() => {
     let active = true;
-    const unsubscribe = apiCache.subscribe((detail) => {
-      if (detail.type === 'set' && detail.url === '/workouts') {
-        setWorkouts(apiCache.getArray('/workouts'));
-      }
-    });
-
-    workoutService.list()
-      .then(({ data }) => {
-        if (active) setWorkouts(data);
+    Promise.all([workoutService.list(), scheduleService.list()])
+      .then(([workoutsResult, scheduleResult]) => {
+        if (!active) return;
+        setWorkouts(workoutsResult.data);
+        setSchedule(scheduleResult.data);
       })
       .catch((requestError) => {
         if (active) setError(errorMessage(requestError, 'Não foi possível carregar os treinos.'));
       })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-
-    return () => {
-      active = false;
-      unsubscribe();
-    };
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, []);
+
+  const daysByWorkout = useMemo(() => buildDaysByWorkout(schedule), [schedule]);
 
   const remove = async (workout) => {
     setActionWorkout(null);
     try {
       await workoutService.remove(workout.id);
       setWorkouts((current) => current.filter(({ id }) => id !== workout.id));
+      load();
     } catch (requestError) {
       setError(errorMessage(requestError, 'Não foi possível excluir o treino.'));
     }
@@ -76,18 +85,16 @@ export default function Workouts() {
     try {
       await workoutService.archive(workout.id);
       setWorkouts((current) => current.filter(({ id }) => id !== workout.id));
+      load();
     } catch (requestError) {
       setError(errorMessage(requestError, 'Não foi possível arquivar o treino.'));
     }
   };
 
-  const totalExercises = workouts.reduce(
-    (total, workout) => total + workout.muscle_groups.reduce(
-      (groupTotal, group) => groupTotal + group.exercises.length,
-      0,
-    ),
-    0,
-  );
+  const saveDays = async (days) => {
+    await scheduleService.setWorkoutDays(daysModalWorkout.id, days);
+    await load();
+  };
 
   let actionSheetActions = [];
   if (actionWorkout?.confirmDelete) {
@@ -103,7 +110,7 @@ export default function Workouts() {
       {
         key: 'confirm-delete',
         label: 'Excluir definitivamente',
-        description: 'Grupos e exercícios também serão apagados',
+        description: 'Seções e exercícios também serão apagados',
         icon: 'delete_forever',
         tone: 'danger',
         keepOpen: true,
@@ -132,9 +139,16 @@ export default function Workouts() {
   } else if (actionWorkout) {
     actionSheetActions = [
       {
+        key: 'days',
+        label: 'Dias da semana',
+        description: 'Escolher em quais dias você faz este treino',
+        icon: 'calendar_month',
+        onSelect: () => setDaysModalWorkout(actionWorkout),
+      },
+      {
         key: 'edit',
         label: 'Editar treino',
-        description: 'Alterar nome, dia ou observações',
+        description: 'Alterar nome, ícone ou observações',
         icon: 'edit',
         onSelect: () => navigate(`/workouts/${actionWorkout.id}/edit`),
       },
@@ -159,15 +173,11 @@ export default function Workouts() {
   }
 
   return (
-    <AppShell title="Meus treinos" subtitle="Sua rotina atual">
-      <WeeklyProgressCard />
-
+    <AppShell title="Meus treinos" subtitle="Seus treinos e blocos">
       {!loading && !error && workouts.length > 0 && (
-        <section className="summary-strip">
-          <div><strong>{workouts.length}</strong><span>treinos</span></div>
-          <div><strong>{totalExercises}</strong><span>{totalExercises === 1 ? 'exercício' : 'exercícios'}</span></div>
-          <Link to="/workouts/new"><Icon>add</Icon> Novo treino</Link>
-        </section>
+        <Link className="button button-primary button-large" to="/workouts/new">
+          <Icon>add</Icon> Novo treino
+        </Link>
       )}
 
       {error && (
@@ -179,7 +189,7 @@ export default function Workouts() {
       {loading && <LoadingView />}
       {!loading && !error && workouts.length === 0 && (
         <>
-          <EmptyView title="Sua semana começa aqui" text="Crie o primeiro treino e organize grupos musculares e exercícios." />
+          <EmptyView title="Sua semana começa aqui" text="Crie o primeiro treino, adicione exercícios e depois escolha os dias." />
           <Link className="button button-primary button-large" to="/workouts/new"><Icon>add</Icon> Novo treino</Link>
         </>
       )}
@@ -187,21 +197,30 @@ export default function Workouts() {
         <section className="workout-list" aria-label="Treinos cadastrados">
           {workouts.map((workout) => {
             const exercises = workout.muscle_groups.flatMap((group) => group.exercises);
+            const sections = namedSections(workout);
+            const dayValues = daysByWorkout.get(workout.id) || [];
             return (
               <article className="workout-card" key={workout.id}>
                 <Link className="workout-main" to={`/workouts/${workout.id}`}>
-                  <div className="day-badge"><span>{dayName(workout.day_of_week).slice(0, 3)}</span><Icon filled>{workoutIcon(workout.icon)}</Icon></div>
+                  <div className="day-badge">
+                    <span>{dayValues.length === 1 ? shortDayName(dayValues[0]) : (dayValues.length || '—')}</span>
+                    <Icon filled>{workoutIcon(workout.icon)}</Icon>
+                  </div>
                   <div className="workout-copy">
                     <div className="workout-eyebrow-row">
-                      <span className="eyebrow">{dayName(workout.day_of_week)}</span>
+                      <span className="workout-days">
+                        {dayValues.length
+                          ? dayValues.map((value) => <em key={value}>{shortDayName(value)}</em>)
+                          : <em className="empty">Sem dia definido</em>}
+                      </span>
                       <WorkoutStatusBadge status={workout.status} />
                     </div>
                     <h2>{workout.title}</h2>
-                    <p>{workout.muscle_groups.length
-                      ? workout.muscle_groups.map((group) => group.name).join(' · ')
-                      : 'Adicione os grupos musculares'}</p>
+                    <p>{workoutSubtitle(workout)}</p>
                     <div className="card-meta">
-                      <span><Icon>category</Icon>{groupCount(workout.muscle_groups.length)}</span>
+                      {sections.length > 0 && (
+                        <span><Icon>category</Icon>{sectionCount(sections.length)}</span>
+                      )}
                       <span><Icon>fitness_center</Icon>{exerciseCount(exercises.length)}</span>
                     </div>
                   </div>
@@ -243,7 +262,7 @@ export default function Workouts() {
             ? 'Esta ação não pode ser desfeita.'
             : actionWorkout?.confirmArchive
               ? 'Esse treino sairá da sua rotina atual, mas continuará salvo.'
-              : `${dayName(actionWorkout?.day_of_week)} · Escolha uma opção`
+              : 'Escolha uma opção'
         }
         icon={
           actionWorkout?.confirmDelete
@@ -254,6 +273,15 @@ export default function Workouts() {
         }
         actions={actionSheetActions}
       />
+
+      {daysModalWorkout && (
+        <DaySelectModal
+          workout={daysModalWorkout}
+          days={daysByWorkout.get(daysModalWorkout.id) || []}
+          onSave={saveDays}
+          onClose={() => setDaysModalWorkout(null)}
+        />
+      )}
     </AppShell>
   );
 }

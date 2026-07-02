@@ -36,14 +36,18 @@ export function durationMinutes(session) {
   if (!session?.started_at || !session?.finished_at) return null;
   const diff = new Date(session.finished_at) - new Date(session.started_at);
   if (!Number.isFinite(diff) || diff <= 0) return null;
-  return Math.round(diff / 60000);
+  return diff / 60000;
 }
 
 export function formatDuration(minutes) {
-  if (minutes === null || minutes === undefined) return null;
-  if (minutes < 60) return `${minutes} min`;
-  const hours = Math.floor(minutes / 60);
-  const rest = minutes % 60;
+  if (!Number.isFinite(minutes) || minutes <= 0) return 'duração não registrada';
+  if (minutes < 1) return 'menos de 1 min';
+
+  const roundedMinutes = Math.round(minutes);
+  if (roundedMinutes < 60) return `${roundedMinutes} min`;
+
+  const hours = Math.floor(roundedMinutes / 60);
+  const rest = roundedMinutes % 60;
   return rest ? `${hours}h ${rest}min` : `${hours}h`;
 }
 

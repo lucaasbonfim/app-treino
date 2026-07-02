@@ -12,3 +12,14 @@ export function dayName(value) {
   return DAYS.find((day) => day.value === Number(value))?.label || 'Dia não informado';
 }
 
+// Semana começando na segunda-feira.
+export const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0];
+
+export function shortDayName(value) {
+  return DAYS.find((day) => day.value === Number(value))?.short || '';
+}
+
+export function sortDaysMonFirst(values) {
+  return [...values].sort((a, b) => WEEK_ORDER.indexOf(Number(a)) - WEEK_ORDER.indexOf(Number(b)));
+}
+

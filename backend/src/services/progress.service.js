@@ -1,5 +1,6 @@
 const checkinRepository = require('../repositories/checkin.repository');
 const userRepository = require('../repositories/user.repository');
+const scheduleService = require('./schedule.service');
 const { integer } = require('../utils/validation');
 
 const WEEKDAY_LABELS = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
@@ -105,6 +106,7 @@ async function weeklySummary(userId) {
     const completed = allDates.filter((iso) => iso >= weekStartIso && iso <= weekEndIso).length;
     const progressPercent = goal > 0 ? Math.min(100, Math.round((completed / goal) * 100)) : 0;
     const streak = currentStreak(dateSet, today);
+    const plan = await scheduleService.planSummary(userId, completed);
 
     return {
         goal,
@@ -116,6 +118,7 @@ async function weeklySummary(userId) {
         week_start: weekStartIso,
         week_end: weekEndIso,
         week_days: buildWeekDays(weekStart, dateSet, today),
+        plan,
         message: motivationalMessage(progressPercent, streak),
     };
 }

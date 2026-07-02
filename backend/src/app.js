@@ -9,6 +9,7 @@ const exerciseRoutes = require('./routes/exercise.routes');
 const exerciseLibraryRoutes = require('./routes/exerciseLibrary.routes');
 const workoutSessionRoutes = require('./routes/workoutSession.routes');
 const progressRoutes = require('./routes/progress.routes');
+const scheduleRoutes = require('./routes/schedule.routes');
 const { notFound, errorHandler } = require('./middlewares/error.middleware');
 
 const app = express();
@@ -37,6 +38,7 @@ app.use(`${API}/exercises`, exerciseRoutes);
 app.use(`${API}/exercise-library`, exerciseLibraryRoutes);
 app.use(`${API}/workout-sessions`, workoutSessionRoutes);
 app.use(`${API}/progress`, progressRoutes);
+app.use(`${API}/schedule`, scheduleRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

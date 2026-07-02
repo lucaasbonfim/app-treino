@@ -29,6 +29,20 @@ export default function ProgressDetails({ summary, monthly, onClose, onEditGoal 
 
       <WeekDaysStatus days={summary.week_days} />
 
+      {summary.plan?.planned > 0 && (
+        <section className="plan-summary" aria-label="Agenda semanal">
+          <header className="plan-summary-head">
+            <span className="eyebrow">Agenda semanal</span>
+          </header>
+          <div className="plan-summary-grid">
+            <div><strong>{summary.plan.planned}</strong><small>Planejado</small></div>
+            <div className="done"><strong>{summary.plan.completed}</strong><small>Concluído</small></div>
+            <div className="pending"><strong>{summary.plan.pending}</strong><small>Pendente</small></div>
+            <div className="rest"><strong>{summary.plan.rest}</strong><small>Descanso</small></div>
+          </div>
+        </section>
+      )}
+
       <div className="progress-stats">
         {stats.map((stat) => (
           <div key={stat.label} className="progress-stat">

@@ -20,6 +20,7 @@ import { dayName } from '../utils/days';
 import { workoutIcon } from '../utils/workoutIcons';
 import { getCachedWorkout, hasCachedWorkout } from '../utils/workoutCache';
 import { exerciseCount } from '../utils/pluralize';
+import { defaultSection, namedSections, allExercises } from '../utils/workoutSections';
 
 function ExerciseRow({ exercise, onActions, readOnly = false }) {
   const details = [
@@ -192,9 +193,9 @@ export default function WorkoutDetail() {
       icon: workoutIcon(workout?.icon),
     },
     group: {
-      label: 'Grupo muscular',
-      edit: 'Alterar nome ou posição no treino',
-      delete: 'Os exercícios deste grupo também serão apagados',
+      label: 'Seção',
+      edit: 'Alterar o nome da seção',
+      delete: 'Os exercícios desta seção também serão apagados',
       icon: 'category',
     },
     exercise: {
@@ -306,67 +307,91 @@ export default function WorkoutDetail() {
             </button>
           )}
 
-          <div className="section-title-row">
-            <div>
-              <span className="eyebrow">Divisão do treino</span>
-              <h2>Grupos musculares</h2>
-            </div>
-            {!archived && (
-              <button className="button button-small button-primary" type="button" onClick={() => setGroupModal({ mode: 'create' })}><Icon>add</Icon> Adicionar grupo</button>
-            )}
-          </div>
+          {(() => {
+            const loose = defaultSection(workout);
+            const sections = namedSections(workout);
+            const hasAnyExercise = allExercises(workout).length > 0;
 
-          {workout.muscle_groups.length === 0 ? (
-            <EmptyView
-              title="Nenhum grupo muscular"
-              text={archived
-                ? 'Este treino arquivado não tem grupos cadastrados.'
-                : 'Adicione Peito, Costas, Pernas ou outro grupo para começar.'}
-            />
-          ) : (
-            <section className="group-list">
-              {workout.muscle_groups.map((group) => (
-                <article className="group-card" key={group.id}>
-                  <header className="group-header">
-                    <div>
-                      <span className="group-number">{String(group.sort_order + 1).padStart(2, '0')}</span>
-                      <div><h3>{group.name}</h3><p>{exerciseCount(group.exercises.length)}</p></div>
-                    </div>
-                    {!archived && (
-                      <button
-                        className="more-button more-button-compact"
-                        type="button"
-                        onClick={() => setActionTarget({ type: 'group', item: group })}
-                        aria-label={`Opções de ${group.name}`}
-                        aria-haspopup="dialog"
-                      >
-                        <Icon>more_horiz</Icon>
-                      </button>
-                    )}
-                  </header>
-                  {group.exercises.length > 0 && (
-                    <ol className="exercise-list">
-                      {group.exercises.map((exercise) => (
-                        <ExerciseRow
-                          key={exercise.id}
-                          exercise={exercise}
-                          readOnly={archived}
-                          onActions={() => setActionTarget({
-                            type: 'exercise',
-                            item: exercise,
-                            group,
-                          })}
-                        />
-                      ))}
-                    </ol>
-                  )}
+            const renderExerciseList = (group) => (
+              group.exercises.length > 0 && (
+                <ol className="exercise-list">
+                  {group.exercises.map((exercise) => (
+                    <ExerciseRow
+                      key={exercise.id}
+                      exercise={exercise}
+                      readOnly={archived}
+                      onActions={() => setActionTarget({ type: 'exercise', item: exercise, group })}
+                    />
+                  ))}
+                </ol>
+              )
+            );
+
+            return (
+              <>
+                <div className="section-title-row">
+                  <div>
+                    <span className="eyebrow">Exercícios</span>
+                    <h2>{sections.length > 0 ? 'Seções do treino' : 'Lista de exercícios'}</h2>
+                  </div>
                   {!archived && (
-                    <button className="add-row-button" type="button" onClick={() => setAddTarget(group)}><Icon>add</Icon> Adicionar exercício</button>
+                    <button className="button button-small button-muted" type="button" onClick={() => setGroupModal({ mode: 'create' })}><Icon>add</Icon> Adicionar seção</button>
                   )}
-                </article>
-              ))}
-            </section>
-          )}
+                </div>
+
+                {archived && !hasAnyExercise && (
+                  <EmptyView
+                    title="Nenhum exercício"
+                    text="Este treino arquivado não tem exercícios cadastrados."
+                  />
+                )}
+
+                <section className="group-list">
+                  {/* Exercícios soltos (seção default, sem cabeçalho) */}
+                  {loose && (loose.exercises.length > 0 || !archived) && (
+                    <article className="group-card">
+                      {renderExerciseList(loose)}
+                      {!archived && (
+                        <>
+                          {loose.exercises.length === 0 && (
+                            <p className="group-empty-hint">Nenhum exercício ainda. Adicione o primeiro abaixo.</p>
+                          )}
+                          <button className="add-row-button" type="button" onClick={() => setAddTarget(loose)}><Icon>add</Icon> Adicionar exercício</button>
+                        </>
+                      )}
+                    </article>
+                  )}
+
+                  {/* Seções nomeadas */}
+                  {sections.map((group) => (
+                    <article className="group-card" key={group.id}>
+                      <header className="group-header">
+                        <div>
+                          <span className="group-number">{String(group.sort_order + 1).padStart(2, '0')}</span>
+                          <div><h3>{group.name}</h3><p>{exerciseCount(group.exercises.length)}</p></div>
+                        </div>
+                        {!archived && (
+                          <button
+                            className="more-button more-button-compact"
+                            type="button"
+                            onClick={() => setActionTarget({ type: 'group', item: group })}
+                            aria-label={`Opções de ${group.name}`}
+                            aria-haspopup="dialog"
+                          >
+                            <Icon>more_horiz</Icon>
+                          </button>
+                        )}
+                      </header>
+                      {renderExerciseList(group)}
+                      {!archived && (
+                        <button className="add-row-button" type="button" onClick={() => setAddTarget(group)}><Icon>add</Icon> Adicionar exercício</button>
+                      )}
+                    </article>
+                  ))}
+                </section>
+              </>
+            );
+          })()}
         </>
       )}
 
@@ -397,7 +422,7 @@ export default function WorkoutDetail() {
         open={Boolean(addTarget)}
         onClose={() => setAddTarget(null)}
         title="Adicionar exercício"
-        description={addTarget ? `Grupo: ${addTarget.name}` : ''}
+        description={addTarget ? (addTarget.is_default ? workout?.title : `Seção: ${addTarget.name}`) : ''}
         icon="add"
         actions={[
           {

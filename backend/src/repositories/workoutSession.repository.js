@@ -87,6 +87,16 @@ async function findByIdForUser(id, userId, connection = db) {
     return hydrated;
 }
 
+// Sessão "do dia" em andamento (workout_id nulo, combinando vários blocos).
+function findActiveDaySession(userId, connection = db) {
+    return connection('workout_sessions')
+        .where({ user_id: userId, status: 'in_progress' })
+        .whereNull('workout_id')
+        .orderBy('started_at', 'desc')
+        .select('id')
+        .first();
+}
+
 async function findHistory(userId, connection = db) {
     const sessions = await connection('workout_sessions')
         .where({ user_id: userId, status: 'completed' })
@@ -241,6 +251,7 @@ async function syncExerciseFromSets(sessionExerciseId, sessionId, connection = d
 module.exports = {
     findActive,
     findByIdForUser,
+    findActiveDaySession,
     findHistory,
     getSummary,
     create,

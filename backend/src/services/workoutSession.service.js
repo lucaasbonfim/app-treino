@@ -51,49 +51,43 @@ function setPerformanceData(payload) {
     return data;
 }
 
-async function start(workoutIdValue, userId) {
-    const workoutId = id(workoutIdValue, 'ID do treino');
-    const active = await repository.findActive(userId, workoutId);
-    if (active) return { ...active, resumed: true };
-
-    const workout = await workoutRepository.findByIdForUser(workoutId, userId);
-    if (!workout) throw notFound('Treino não encontrado.');
-    if (workout.status === 'archived') {
-        throw badRequest('Este treino está arquivado. Reative-o para iniciar.');
-    }
-
+// Monta os snapshots de exercícios a partir de um ou mais treinos, na ordem.
+// A seção default de cada treino tem nome = título, então em uma sessão
+// combinada os cabeçalhos ficam "Peito", "Ombro" etc.
+function buildSnapshots(workouts) {
     const snapshots = [];
     let sortOrder = 0;
-    for (const group of workout.muscle_groups) {
-        for (const exercise of group.exercises) {
-            snapshots.push({
-                workout_exercise_id: exercise.id,
-                muscle_group_name: group.name,
-                exercise_name: exercise.name,
-                planned_sets: exercise.sets,
-                planned_reps: exercise.reps,
-                planned_weight: exercise.weight,
-                rest_time_seconds: exercise.rest_time_seconds || 60,
-                performed_sets: exercise.sets,
-                performed_reps: exercise.reps,
-                performed_weight: exercise.weight,
-                completed: false,
-                notes: exercise.notes,
-                sort_order: sortOrder,
-            });
-            sortOrder += 1;
+    for (const workout of workouts) {
+        for (const group of workout.muscle_groups) {
+            for (const exercise of group.exercises) {
+                snapshots.push({
+                    workout_exercise_id: exercise.id,
+                    muscle_group_name: group.name,
+                    exercise_name: exercise.name,
+                    planned_sets: exercise.sets,
+                    planned_reps: exercise.reps,
+                    planned_weight: exercise.weight,
+                    rest_time_seconds: exercise.rest_time_seconds || 60,
+                    performed_sets: exercise.sets,
+                    performed_reps: exercise.reps,
+                    performed_weight: exercise.weight,
+                    completed: false,
+                    notes: exercise.notes,
+                    sort_order: sortOrder,
+                });
+                sortOrder += 1;
+            }
         }
     }
+    return snapshots;
+}
 
-    if (!snapshots.length) {
-        throw badRequest('Adicione pelo menos um exercício antes de iniciar o treino.');
-    }
-
+function persistSession(userId, sessionData, snapshots) {
     return db.transaction(async (transaction) => {
         const session = await repository.create({
             user_id: userId,
-            workout_id: workoutId,
-            workout_name: workout.title,
+            workout_id: sessionData.workoutId,
+            workout_name: sessionData.workoutName,
             status: 'in_progress',
             notes: null,
         }, transaction);
@@ -127,6 +121,57 @@ async function start(workoutIdValue, userId) {
 
         return repository.findByIdForUser(session.id, userId, transaction);
     });
+}
+
+async function start(workoutIdValue, userId) {
+    const workoutId = id(workoutIdValue, 'ID do treino');
+    const active = await repository.findActive(userId, workoutId);
+    if (active) return { ...active, resumed: true };
+
+    const workout = await workoutRepository.findByIdForUser(workoutId, userId);
+    if (!workout) throw notFound('Treino não encontrado.');
+    if (workout.status === 'archived') {
+        throw badRequest('Este treino está arquivado. Reative-o para iniciar.');
+    }
+
+    const snapshots = buildSnapshots([workout]);
+    if (!snapshots.length) {
+        throw badRequest('Adicione pelo menos um exercício antes de iniciar o treino.');
+    }
+
+    return persistSession(userId, { workoutId, workoutName: workout.title }, snapshots);
+}
+
+// Inicia o treino do dia. Um único bloco cai no fluxo normal (com retomada e
+// índice único por treino). Vários blocos viram uma sessão combinada
+// (workout_id nulo) com todos os exercícios.
+async function startForWorkouts(userId, workoutIds, name) {
+    const ids = [...new Set((workoutIds || []).map((value) => id(value, 'ID do treino')))];
+    if (!ids.length) throw badRequest('Nenhum treino definido para iniciar.');
+    if (ids.length === 1) return start(ids[0], userId);
+
+    const active = await repository.findActiveDaySession(userId);
+    if (active) {
+        return { ...(await repository.findByIdForUser(active.id, userId)), resumed: true };
+    }
+
+    const workouts = [];
+    for (const workoutId of ids) {
+        const workout = await workoutRepository.findByIdForUser(workoutId, userId);
+        if (!workout) throw notFound('Treino não encontrado.');
+        if (workout.status === 'archived') {
+            throw badRequest('Há um treino arquivado neste dia. Ajuste a agenda antes de iniciar.');
+        }
+        workouts.push(workout);
+    }
+
+    const snapshots = buildSnapshots(workouts);
+    if (!snapshots.length) {
+        throw badRequest('Adicione exercícios aos treinos do dia antes de iniciar.');
+    }
+
+    const workoutName = String(name || workouts.map((w) => w.title).join(' + ')).slice(0, 120);
+    return persistSession(userId, { workoutId: null, workoutName }, snapshots);
 }
 
 async function get(sessionIdValue, userId) {
@@ -310,6 +355,7 @@ async function finish(sessionIdValue, payload, userId) {
 
 module.exports = {
     start,
+    startForWorkouts,
     get,
     history,
     summary,

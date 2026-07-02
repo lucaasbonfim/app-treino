@@ -1,4 +1,6 @@
 const repository = require('../repositories/workout.repository');
+const groupRepository = require('../repositories/muscleGroup.repository');
+const scheduleRepository = require('../repositories/schedule.repository');
 const { requiredText, optionalText, integer, id } = require('../utils/validation');
 const { badRequest, notFound } = require('../utils/httpError');
 
@@ -45,8 +47,17 @@ async function get(workoutId, userId) {
 }
 
 async function create(payload, userId) {
-    const workout = await repository.create({ ...validate(payload), user_id: userId });
-    return { ...workout, muscle_groups: [] };
+    const data = validate(payload);
+    const workout = await repository.create({ ...data, user_id: userId });
+    // Toda ficha nasce com uma seção default (invisível) para os exercícios
+    // soltos, evitando o passo "crie um grupo antes de adicionar exercícios".
+    await groupRepository.create({
+        workout_id: workout.id,
+        name: data.title,
+        sort_order: 0,
+        is_default: true,
+    });
+    return get(workout.id, userId);
 }
 
 async function update(workoutId, payload, userId) {
@@ -57,8 +68,11 @@ async function update(workoutId, payload, userId) {
         throw badRequest('Este treino está arquivado. Reative-o para editar.');
     }
 
-    const workout = await repository.updateForUser(targetId, userId, validate(payload));
+    const data = validate(payload);
+    const workout = await repository.updateForUser(targetId, userId, data);
     if (!workout) throw notFound('Treino não encontrado.');
+    // A seção default acompanha o título do treino.
+    await groupRepository.renameDefault(targetId, data.title);
     return get(workout.id, userId);
 }
 
@@ -72,6 +86,8 @@ async function archive(workoutId, userId) {
         status: 'archived',
         archived_at: repository.now(),
     });
+    // Um treino arquivado não pode ficar vinculado à agenda semanal.
+    await scheduleRepository.detachWorkout(userId, targetId);
     return get(targetId, userId);
 }
 

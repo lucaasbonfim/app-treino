@@ -3,6 +3,6 @@ import { useAuth } from '../contexts/auth-context';
 
 export default function PublicOnlyRoute() {
   const { token } = useAuth();
-  return token ? <Navigate to="/workouts" replace /> : <Outlet />;
+  return token ? <Navigate to="/" replace /> : <Outlet />;
 }
 

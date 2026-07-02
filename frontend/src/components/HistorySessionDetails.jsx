@@ -30,7 +30,7 @@ export default function HistorySessionDetails({ session, onClose }) {
         </div>
         <div>
           <span>Duração</span>
-          <strong>{duration || '—'}</strong>
+          <strong>{duration}</strong>
         </div>
       </div>
 
@@ -41,7 +41,7 @@ export default function HistorySessionDetails({ session, onClose }) {
 
       <div className="session-detail-list">
         {session.exercises.map((exercise) => (
-          <SessionExerciseItem key={exercise.id} exercise={exercise} />
+          <SessionExerciseItem key={exercise.id} exercise={exercise} defaultSetsExpanded />
         ))}
       </div>
 

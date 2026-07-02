@@ -47,6 +47,15 @@ export const progressService = {
   updateWeeklyGoal: (data) => runMutation(() => api.put('/progress/weekly-goal', data)),
 };
 
+export const scheduleService = {
+  list: (options) => cachedGet('/schedule', {}, options),
+  today: (options) => cachedGet('/schedule/today', {}, options),
+  setDay: (dayOfWeek, data) => runMutation(() => api.put(`/schedule/${dayOfWeek}`, data)),
+  removeDay: (dayOfWeek) => runMutation(() => api.delete(`/schedule/${dayOfWeek}`)),
+  setWorkoutDays: (workoutId, days) => runMutation(() => api.put(`/schedule/workout/${workoutId}`, { days })),
+  startDay: (dayOfWeek) => runMutation(() => api.post(`/schedule/${dayOfWeek}/sessions`)),
+};
+
 export const exerciseLibraryService = {
   list: (params, options) => cachedGet('/exercise-library', params ? { params } : {}, options),
   groups: (options) => cachedGet('/exercise-library/groups', {}, options),

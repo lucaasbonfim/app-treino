@@ -20,7 +20,7 @@ export default function ExerciseEvolutionCard({ item }) {
   const stats = [
     { label: 'Última carga', value: formatWeight(item.last_weight) || '—' },
     { label: 'Maior carga', value: formatWeight(item.max_weight) || '—' },
-    { label: 'Últimas reps', value: item.last_reps ? `${item.last_reps}` : '—' },
+    { label: 'Últimas reps', value: item.last_reps ? `${item.last_reps} reps` : '—' },
     { label: 'Última execução', value: formatShortDate(item.last_done_at) || '—' },
   ];
 

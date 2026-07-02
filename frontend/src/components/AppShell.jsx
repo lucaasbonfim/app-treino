@@ -16,7 +16,10 @@ export default function AppShell({
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const isList = location.pathname === '/workouts';
+  const path = location.pathname;
+  const isHome = path === '/';
+  const isWorkouts = path.startsWith('/workouts');
+  const isMainTab = isHome || path === '/workouts';
 
   return (
     <div className={`app-frame ${hideNav ? 'without-nav' : ''}`}>
@@ -34,7 +37,7 @@ export default function AppShell({
             {subtitle && <p>{subtitle}</p>}
           </div>
           {action || (
-            isList && (
+            isMainTab && (
               <button className="avatar-button" type="button" onClick={() => setProfileMenuOpen(true)} aria-label="Abrir menu da conta">
                 <span>{user?.name?.trim()?.charAt(0)?.toUpperCase() || 'U'}</span>
                 <Icon>menu</Icon>
@@ -48,16 +51,16 @@ export default function AppShell({
 
       {!hideNav && <nav className="bottom-nav" aria-label="Navegação principal">
         <div className="bottom-nav-inner">
-          <Link className={isList ? 'active' : ''} to="/workouts">
-            <Icon filled={isList}>view_agenda</Icon>
+          <Link className={isHome ? 'active' : ''} to="/">
+            <Icon filled={isHome}>calendar_month</Icon>
+            <span>Início</span>
+          </Link>
+          <Link className={isWorkouts ? 'active' : ''} to="/workouts">
+            <Icon filled={isWorkouts}>view_agenda</Icon>
             <span>Meus treinos</span>
           </Link>
-          <Link className={location.pathname === '/workouts/new' ? 'active' : ''} to="/workouts/new">
-            <Icon filled={location.pathname === '/workouts/new'}>add_circle</Icon>
-            <span>Novo treino</span>
-          </Link>
-          <Link className={location.pathname === '/history' ? 'active' : ''} to="/history">
-            <Icon filled={location.pathname === '/history'}>history</Icon>
+          <Link className={path === '/history' ? 'active' : ''} to="/history">
+            <Icon filled={path === '/history'}>history</Icon>
             <span>Histórico</span>
           </Link>
         </div>

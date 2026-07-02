@@ -1,7 +1,7 @@
 import Icon from './Icon';
 
 export default function HistorySummaryCards({ summary }) {
-  const items = [
+  const primaryItems = [
     {
       key: 'workouts',
       icon: 'exercise',
@@ -14,32 +14,35 @@ export default function HistorySummaryCards({ summary }) {
       label: 'Séries concluídas',
       value: summary?.sets_completed ?? 0,
     },
-    {
-      key: 'exercises',
-      icon: 'fitness_center',
-      label: 'Exercícios realizados',
-      value: summary?.exercises_completed ?? 0,
-    },
-    {
-      key: 'last',
-      icon: 'schedule',
-      label: 'Último treino',
-      value: summary?.last_workout_name || '—',
-      wide: true,
-    },
   ];
+  const exercises = summary?.exercises_completed ?? 0;
 
   return (
-    <section className="history-summary-grid">
-      {items.map((item) => (
-        <article className={`history-summary-card ${item.wide ? 'wide' : ''}`} key={item.key}>
-          <span className="history-summary-icon"><Icon filled>{item.icon}</Icon></span>
-          <div>
-            <strong>{item.value}</strong>
-            <small>{item.label}</small>
+    <section className="history-overview" aria-label="Resumo geral">
+      <span className="history-overview-label">Resumo geral</span>
+
+      <div className="history-summary-grid">
+        {primaryItems.map((item) => (
+          <div className="history-summary-card" key={item.key}>
+            <span className="history-summary-icon"><Icon filled>{item.icon}</Icon></span>
+            <div>
+              <strong>{item.value}</strong>
+              <small>{item.label}</small>
+            </div>
           </div>
-        </article>
-      ))}
+        ))}
+      </div>
+
+      <div className="history-summary-secondary">
+        <span>
+          <Icon>fitness_center</Icon>
+          {exercises} {exercises === 1 ? 'exercício realizado' : 'exercícios realizados'}
+        </span>
+        <span>
+          <Icon>schedule</Icon>
+          Último treino: <strong>{summary?.last_workout_name || 'não registrado'}</strong>
+        </span>
+      </div>
     </section>
   );
 }

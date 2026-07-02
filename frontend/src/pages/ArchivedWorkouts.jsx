@@ -9,7 +9,8 @@ import { workoutService } from '../services';
 import { errorMessage } from '../services/api';
 import { dayName } from '../utils/days';
 import { workoutIcon } from '../utils/workoutIcons';
-import { exerciseCount, groupCount } from '../utils/pluralize';
+import { exerciseCount, sectionCount } from '../utils/pluralize';
+import { namedSections } from '../utils/workoutSections';
 import { formatShortDate } from '../utils/historyStats';
 
 export default function ArchivedWorkouts() {
@@ -62,6 +63,7 @@ export default function ArchivedWorkouts() {
         <section className="workout-list" aria-label="Treinos arquivados">
           {workouts.map((workout) => {
             const exercises = workout.muscle_groups.flatMap((group) => group.exercises);
+            const sections = namedSections(workout);
             return (
               <article className="archived-card" key={workout.id}>
                 <div className="archived-main">
@@ -73,7 +75,9 @@ export default function ArchivedWorkouts() {
                     </div>
                     <p>{dayName(workout.day_of_week)}</p>
                     <div className="card-meta">
-                      <span><Icon>category</Icon>{groupCount(workout.muscle_groups.length)}</span>
+                      {sections.length > 0 && (
+                        <span><Icon>category</Icon>{sectionCount(sections.length)}</span>
+                      )}
                       <span><Icon>fitness_center</Icon>{exerciseCount(exercises.length)}</span>
                       {workout.archived_at && (
                         <span><Icon>inventory_2</Icon>Arquivado em {formatShortDate(workout.archived_at)}</span>

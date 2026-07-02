@@ -7,6 +7,7 @@ import HistoryFilterChips from '../components/HistoryFilterChips';
 import HistoryCard from '../components/HistoryCard';
 import HistorySessionDetails from '../components/HistorySessionDetails';
 import ExerciseEvolutionCard from '../components/ExerciseEvolutionCard';
+import EmptyHistoryState from '../components/EmptyHistoryState';
 import { apiCache, workoutSessionService } from '../services';
 import { errorMessage } from '../services/api';
 import { filterByPeriod, sessionMetrics } from '../utils/historyStats';
@@ -88,82 +89,89 @@ export default function WorkoutHistory() {
 
   return (
     <AppShell title="Histórico" subtitle="Treinos finalizados">
-      {loading && <LoadingView />}
-      {error && <p className="error-banner">{error}</p>}
+      <div className="history-screen">
+        {loading && <LoadingView />}
+        {error && <p className="error-banner">{error}</p>}
 
-      {!loading && !error && sessions.length > 0 && (
-        <>
-          <HistorySummaryCards summary={summaryData} />
+        {!loading && !error && sessions.length > 0 && (
+          <>
+            <HistorySummaryCards summary={summaryData} />
 
-          <div className="history-tabs" role="tablist" aria-label="Seções do histórico">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={view === 'treinos'}
-              className={`history-tab ${view === 'treinos' ? 'active' : ''}`}
-              onClick={() => setView('treinos')}
-            >
-              <Icon>history</Icon> Treinos
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={view === 'evolucao'}
-              className={`history-tab ${view === 'evolucao' ? 'active' : ''}`}
-              onClick={() => setView('evolucao')}
-            >
-              <Icon>monitoring</Icon> Evolução
-            </button>
-          </div>
+            <div className="history-tabs" role="tablist" aria-label="Seções do histórico">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={view === 'treinos'}
+                className={`history-tab ${view === 'treinos' ? 'active' : ''}`}
+                onClick={() => setView('treinos')}
+              >
+                <Icon>history</Icon> Treinos
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={view === 'evolucao'}
+                className={`history-tab ${view === 'evolucao' ? 'active' : ''}`}
+                onClick={() => setView('evolucao')}
+              >
+                <Icon>monitoring</Icon> Evolução
+              </button>
+            </div>
 
-          {view === 'treinos' && (
-            <>
-              <HistoryFilterChips value={period} onChange={setPeriod} />
-              {filteredSessions.length === 0 ? (
-                <EmptyView
-                  title="Nenhum treino no período"
-                  text="Ajuste o filtro para ver mais treinos finalizados."
+            {view === 'treinos' && (
+              <>
+                <HistoryFilterChips value={period} onChange={setPeriod} />
+                {filteredSessions.length === 0 ? (
+                  <EmptyView
+                    title="Nenhum treino no período"
+                    text="Ajuste o filtro para ver mais treinos finalizados."
+                  />
+                ) : (
+                  <section className="history-list">
+                    {filteredSessions.map((session) => (
+                      <HistoryCard
+                        key={session.id}
+                        session={session}
+                        sessions={sessions}
+                        expanded={expandedId === session.id}
+                        onToggle={() => setExpandedId(expandedId === session.id ? null : session.id)}
+                        onOpenDetails={setDetailSession}
+                      />
+                    ))}
+                  </section>
+                )}
+              </>
+            )}
+
+            {view === 'evolucao' && (
+              evolution.length === 0 ? (
+                <EmptyHistoryState
+                  icon="monitoring"
+                  title="Sem evolução registrada"
+                  text="Conclua algumas séries para começar a acompanhar sua carga."
                 />
               ) : (
-                <section className="history-list">
-                  {filteredSessions.map((session) => (
-                    <HistoryCard
-                      key={session.id}
-                      session={session}
-                      sessions={sessions}
-                      expanded={expandedId === session.id}
-                      onToggle={() => setExpandedId(expandedId === session.id ? null : session.id)}
-                      onOpenDetails={setDetailSession}
+                <section className="evolution-list">
+                  {evolution.map((item) => (
+                    <ExerciseEvolutionCard
+                      key={`${item.muscle_group_name}-${item.exercise_name}`}
+                      item={item}
                     />
                   ))}
                 </section>
-              )}
-            </>
-          )}
+              )
+            )}
+          </>
+        )}
 
-          {view === 'evolucao' && (
-            evolution.length === 0 ? (
-              <EmptyView
-                title="Sem evolução ainda"
-                text="Conclua séries dos seus exercícios para acompanhar a evolução de carga."
-              />
-            ) : (
-              <section className="evolution-list">
-                {evolution.map((item) => (
-                  <ExerciseEvolutionCard
-                    key={`${item.muscle_group_name}-${item.exercise_name}`}
-                    item={item}
-                  />
-                ))}
-              </section>
-            )
-          )}
-        </>
-      )}
-
-      {isEmpty && (
-        <EmptyView title="Nenhum treino finalizado" text="Inicie um treino e finalize a sessão para vê-la aqui." />
-      )}
+        {isEmpty && (
+          <EmptyHistoryState
+            title="Nenhum treino finalizado ainda"
+            text="Finalize um treino para acompanhar sua evolução por aqui."
+            actionLabel="Ver meus treinos"
+          />
+        )}
+      </div>
 
       {detailSession && (
         <HistorySessionDetails session={detailSession} onClose={() => setDetailSession(null)} />
