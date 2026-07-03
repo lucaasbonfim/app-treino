@@ -5251,3 +5251,142 @@ body { background: var(--surface); }
 .plan-summary-grid .pending strong {
   color: var(--primary);
 }
+
+/* ===== Sessão de treino em andamento ===== */
+.current-workout-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.7rem 0.8rem;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--primary) 38%, var(--border));
+  border-radius: var(--radius-lg);
+  padding: 0.85rem;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--primary-soft) 48%, var(--card)), var(--card));
+  box-shadow: var(--elev);
+}
+
+.current-workout-card::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 0.2rem;
+  background: var(--primary);
+  content: "";
+}
+
+.current-workout-accent {
+  display: grid;
+  width: 2.7rem;
+  height: 2.7rem;
+  place-items: center;
+  border-radius: var(--radius);
+  color: #04121a;
+  background: linear-gradient(160deg, var(--primary-bright), var(--primary));
+}
+
+.current-workout-accent .material-symbols-outlined {
+  font-size: 1.35rem;
+}
+
+.current-workout-content {
+  min-width: 0;
+}
+
+.current-workout-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--primary);
+  font-size: 0.59rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.current-workout-eyebrow i {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--primary) 15%, transparent);
+}
+
+.current-workout-content > strong {
+  display: block;
+  overflow: hidden;
+  margin-top: 0.15rem;
+  color: var(--text);
+  font: 800 0.95rem "Manrope", sans-serif;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.current-workout-content > small {
+  display: block;
+  overflow: hidden;
+  margin-top: 0.12rem;
+  color: var(--muted);
+  font-size: 0.67rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.current-workout-button {
+  display: inline-flex;
+  grid-column: 1 / -1;
+  min-height: 2.65rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border-radius: var(--radius);
+  color: #04121a;
+  background: linear-gradient(180deg, var(--primary-bright), var(--primary));
+  font: 800 0.76rem "Manrope", sans-serif;
+}
+
+.current-workout-button:active {
+  transform: scale(0.98);
+}
+
+.current-workout-button .material-symbols-outlined {
+  font-size: 1.05rem;
+}
+
+.run-session-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.abandon-workout-button {
+  display: inline-flex;
+  min-height: 2.7rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border-radius: var(--radius);
+  color: var(--muted);
+  background: transparent;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.abandon-workout-button:active {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 8%, transparent);
+}
+
+.abandon-workout-button:disabled,
+.current-workout-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.action-sheet-action:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}

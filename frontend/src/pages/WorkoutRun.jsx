@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import AbandonWorkoutConfirmModal from '../components/AbandonWorkoutConfirmModal';
 import ActionSheet from '../components/ActionSheet';
 import AppShell from '../components/AppShell';
 import ExerciseExecutionCard from '../components/ExerciseExecutionCard';
@@ -36,6 +37,8 @@ export default function WorkoutRun() {
   const [savingSetIds, setSavingSetIds] = useState({});
   const [finishing, setFinishing] = useState(false);
   const [finishOpen, setFinishOpen] = useState(false);
+  const [abandoning, setAbandoning] = useState(false);
+  const [abandonOpen, setAbandonOpen] = useState(false);
   const restTimer = useRestTimer(id);
 
   useEffect(() => {
@@ -66,7 +69,9 @@ export default function WorkoutRun() {
     return [...groups.entries()];
   }, [exercises]);
 
-  const readOnly = session?.status === 'completed';
+  const completed = session?.status === 'completed';
+  const abandoned = session?.status === 'abandoned';
+  const readOnly = session?.status !== 'in_progress';
   const hasPendingSaves = Object.values(savingSetIds).some(Boolean);
 
   const allSets = useMemo(
@@ -170,10 +175,24 @@ export default function WorkoutRun() {
     }
   };
 
+  const abandon = async () => {
+    setAbandoning(true);
+    setError('');
+    try {
+      await workoutSessionService.abandon(session.id);
+      restTimer.skip();
+      navigate('/workouts', { replace: true });
+    } catch (requestError) {
+      setError(errorMessage(requestError, 'Não foi possível abandonar o treino.'));
+      setAbandonOpen(false);
+      setAbandoning(false);
+    }
+  };
+
   return (
     <AppShell
       title={session?.workout_name || 'Executar treino'}
-      subtitle={readOnly ? 'Treino finalizado' : 'Treino em andamento'}
+      subtitle={completed ? 'Treino finalizado' : (abandoned ? 'Treino abandonado' : 'Treino em andamento')}
       back
       hideNav
     >
@@ -227,15 +246,32 @@ export default function WorkoutRun() {
             />
           </label>
 
-          {readOnly ? (
+          {completed && (
             <button className="button button-primary button-large" type="button" onClick={() => navigate('/history')}>
               <Icon>history</Icon> Ver histórico
             </button>
-          ) : (
-            <button className="finish-workout-button" type="button" onClick={() => setFinishOpen(true)} disabled={finishing || hasPendingSaves}>
-              <Icon filled>flag</Icon>
-              {finishing ? 'Finalizando...' : (hasPendingSaves ? 'Salvando alterações...' : 'Finalizar treino')}
+          )}
+          {abandoned && (
+            <button className="button button-muted button-large" type="button" onClick={() => navigate('/workouts')}>
+              <Icon>arrow_back</Icon> Voltar aos treinos
             </button>
+          )}
+          {!readOnly && (
+            <div className="run-session-actions">
+              <button className="finish-workout-button" type="button" onClick={() => setFinishOpen(true)} disabled={finishing || abandoning || hasPendingSaves}>
+                <Icon filled>flag</Icon>
+                {finishing ? 'Finalizando...' : (hasPendingSaves ? 'Salvando alterações...' : 'Finalizar treino')}
+              </button>
+              <button
+                className="abandon-workout-button"
+                type="button"
+                onClick={() => setAbandonOpen(true)}
+                disabled={finishing || abandoning || hasPendingSaves}
+              >
+                <Icon>cancel</Icon>
+                Abandonar treino
+              </button>
+            </div>
           )}
         </>
       )}
@@ -254,6 +290,14 @@ export default function WorkoutRun() {
           keepOpen: true,
           onSelect: finish,
         }]}
+      />
+      <AbandonWorkoutConfirmModal
+        open={abandonOpen}
+        onClose={() => {
+          if (!abandoning) setAbandonOpen(false);
+        }}
+        onConfirm={abandon}
+        loading={abandoning}
       />
       <FullscreenRestTimer
         timer={restTimer.timer}

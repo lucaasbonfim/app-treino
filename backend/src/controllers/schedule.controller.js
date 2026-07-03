@@ -29,7 +29,7 @@ async function startDay(req, res) {
         plan.workoutIds,
         plan.name,
     );
-    res.status(201).json(session);
+    res.status(session.resumed ? 200 : 201).json(session);
 }
 
 module.exports = { list, today, setDay, removeDay, setWorkoutDays, startDay };

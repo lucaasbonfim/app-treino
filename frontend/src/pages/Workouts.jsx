@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import ActionSheet from '../components/ActionSheet';
 import AppShell from '../components/AppShell';
+import CurrentWorkoutCard from '../components/CurrentWorkoutCard';
 import DaySelectModal from '../components/DaySelectModal';
 import Icon from '../components/Icon';
 import WorkoutStatusBadge from '../components/WorkoutStatusBadge';
@@ -174,6 +175,8 @@ export default function Workouts() {
 
   return (
     <AppShell title="Meus treinos" subtitle="Seus treinos e blocos">
+      <CurrentWorkoutCard />
+
       {!loading && !error && workouts.length > 0 && (
         <Link className="button button-primary button-large" to="/workouts/new">
           <Icon>add</Icon> Novo treino

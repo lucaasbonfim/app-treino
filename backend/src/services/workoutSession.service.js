@@ -84,6 +84,16 @@ function buildSnapshots(workouts) {
 
 function persistSession(userId, sessionData, snapshots) {
     return db.transaction(async (transaction) => {
+        // Serializa o início por usuário. O índice único continua sendo a
+        // garantia definitiva, inclusive para outros clientes da API.
+        await transaction.raw(
+            'SELECT pg_advisory_xact_lock(?, ?)',
+            [20260702, Number(userId)],
+        );
+
+        const current = await repository.findCurrent(userId, transaction);
+        if (current) return { ...current, resumed: true };
+
         const session = await repository.create({
             user_id: userId,
             workout_id: sessionData.workoutId,
@@ -125,8 +135,8 @@ function persistSession(userId, sessionData, snapshots) {
 
 async function start(workoutIdValue, userId) {
     const workoutId = id(workoutIdValue, 'ID do treino');
-    const active = await repository.findActive(userId, workoutId);
-    if (active) return { ...active, resumed: true };
+    const current = await repository.findCurrent(userId);
+    if (current) return { ...current, resumed: true };
 
     const workout = await workoutRepository.findByIdForUser(workoutId, userId);
     if (!workout) throw notFound('Treino não encontrado.');
@@ -142,18 +152,15 @@ async function start(workoutIdValue, userId) {
     return persistSession(userId, { workoutId, workoutName: workout.title }, snapshots);
 }
 
-// Inicia o treino do dia. Um único bloco cai no fluxo normal (com retomada e
-// índice único por treino). Vários blocos viram uma sessão combinada
-// (workout_id nulo) com todos os exercícios.
+// Inicia o treino do dia. Um único bloco cai no fluxo normal. Vários blocos
+// viram uma sessão combinada (workout_id nulo) com todos os exercícios.
 async function startForWorkouts(userId, workoutIds, name) {
     const ids = [...new Set((workoutIds || []).map((value) => id(value, 'ID do treino')))];
     if (!ids.length) throw badRequest('Nenhum treino definido para iniciar.');
-    if (ids.length === 1) return start(ids[0], userId);
 
-    const active = await repository.findActiveDaySession(userId);
-    if (active) {
-        return { ...(await repository.findByIdForUser(active.id, userId)), resumed: true };
-    }
+    const current = await repository.findCurrent(userId);
+    if (current) return { ...current, resumed: true };
+    if (ids.length === 1) return start(ids[0], userId);
 
     const workouts = [];
     for (const workoutId of ids) {
@@ -181,6 +188,10 @@ async function get(sessionIdValue, userId) {
     );
     if (!session) throw notFound('Sessão de treino não encontrada.');
     return session;
+}
+
+function current(userId) {
+    return repository.findCurrent(userId);
 }
 
 function history(userId) {
@@ -270,7 +281,9 @@ async function update(sessionIdValue, payload, userId) {
     const sessionId = id(sessionIdValue, 'ID da sessão');
     const session = await repository.findByIdForUser(sessionId, userId);
     if (!session) throw notFound('Sessão de treino não encontrada.');
-    if (session.status !== 'in_progress') throw badRequest('Este treino já foi finalizado.');
+    if (session.status !== 'in_progress') {
+        throw badRequest('Esta sessão de treino não está mais em andamento.');
+    }
 
     await repository.updateForUser(sessionId, userId, {
         notes: optionalText(payload.notes, 'Observações da sessão', 2000),
@@ -288,7 +301,9 @@ async function updateExercise(sessionIdValue, exerciseIdValue, payload, userId) 
         performanceData(payload),
     );
     if (!result) throw notFound('Exercício da sessão não encontrado.');
-    if (result.sessionStatus !== 'in_progress') throw badRequest('Este treino já foi finalizado.');
+    if (result.sessionStatus !== 'in_progress') {
+        throw badRequest('Esta sessão de treino não está mais em andamento.');
+    }
     return result.exercise;
 }
 
@@ -301,7 +316,7 @@ async function updateSet(sessionIdValue, setIdValue, payload, userId) {
         const owned = await repository.findSetForUser(setId, sessionId, userId, transaction);
         if (!owned) throw notFound('Série da sessão não encontrada.');
         if (owned.session_status !== 'in_progress') {
-            throw badRequest('Este treino já foi finalizado.');
+            throw badRequest('Esta sessão de treino não está mais em andamento.');
         }
 
         if (data.completed && !owned.completed) {
@@ -321,14 +336,21 @@ async function updateSet(sessionIdValue, setIdValue, payload, userId) {
     });
 }
 
-async function finish(sessionIdValue, payload, userId) {
+async function finish(sessionIdValue, payload = {}, userId) {
     const sessionId = id(sessionIdValue, 'ID da sessão');
-    const current = await repository.findByIdForUser(sessionId, userId);
-    if (!current) throw notFound('Sessão de treino não encontrada.');
-    if (current.status === 'completed') return current;
-
     const exercises = Array.isArray(payload.exercises) ? payload.exercises : [];
     return db.transaction(async (transaction) => {
+        const currentSession = await repository.findByIdForUserForUpdate(
+            sessionId,
+            userId,
+            transaction,
+        );
+        if (!currentSession) throw notFound('Sessão de treino não encontrada.');
+        if (currentSession.status === 'completed') return currentSession;
+        if (currentSession.status !== 'in_progress') {
+            throw badRequest('Um treino abandonado não pode ser finalizado.');
+        }
+
         for (const exercise of exercises) {
             const result = await repository.updateExerciseForUser(
                 id(exercise.id, 'ID do exercício da sessão'),
@@ -353,10 +375,36 @@ async function finish(sessionIdValue, payload, userId) {
     });
 }
 
+async function abandon(sessionIdValue, userId) {
+    const sessionId = id(sessionIdValue, 'ID da sessão');
+
+    return db.transaction(async (transaction) => {
+        const currentSession = await repository.findByIdForUserForUpdate(
+            sessionId,
+            userId,
+            transaction,
+        );
+        if (!currentSession) throw notFound('Sessão de treino não encontrada.');
+        if (currentSession.status === 'abandoned') return currentSession;
+        if (currentSession.status === 'completed') {
+            throw badRequest('Um treino finalizado não pode ser abandonado.');
+        }
+
+        await repository.updateForUser(sessionId, userId, {
+            status: 'abandoned',
+            finished_at: null,
+            abandoned_at: transaction.fn.now(),
+        }, transaction);
+
+        return repository.findByIdForUser(sessionId, userId, transaction);
+    });
+}
+
 module.exports = {
     start,
     startForWorkouts,
     get,
+    current,
     history,
     summary,
     evolution,
@@ -364,4 +412,5 @@ module.exports = {
     updateExercise,
     updateSet,
     finish,
+    abandon,
 };

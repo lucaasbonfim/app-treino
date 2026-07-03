@@ -7,6 +7,7 @@ const sessionFields = [
     'workout_name',
     'started_at',
     'finished_at',
+    'abandoned_at',
     'status',
     'notes',
     'created_at',
@@ -67,10 +68,12 @@ async function hydrate(sessions, connection = db) {
     }));
 }
 
-async function findActive(userId, workoutId, connection = db) {
+async function findCurrent(userId, connection = db) {
     const session = await connection('workout_sessions')
-        .where({ user_id: userId, workout_id: workoutId, status: 'in_progress' })
+        .where({ user_id: userId, status: 'in_progress' })
         .select(sessionFields)
+        .orderBy('started_at', 'desc')
+        .orderBy('id', 'desc')
         .first();
     if (!session) return null;
     const [hydrated] = await hydrate([session], connection);
@@ -87,14 +90,15 @@ async function findByIdForUser(id, userId, connection = db) {
     return hydrated;
 }
 
-// Sessão "do dia" em andamento (workout_id nulo, combinando vários blocos).
-function findActiveDaySession(userId, connection = db) {
-    return connection('workout_sessions')
-        .where({ user_id: userId, status: 'in_progress' })
-        .whereNull('workout_id')
-        .orderBy('started_at', 'desc')
-        .select('id')
+async function findByIdForUserForUpdate(id, userId, connection = db) {
+    const session = await connection('workout_sessions')
+        .where({ id, user_id: userId })
+        .select(sessionFields)
+        .forUpdate()
         .first();
+    if (!session) return null;
+    const [hydrated] = await hydrate([session], connection);
+    return hydrated;
 }
 
 async function findHistory(userId, connection = db) {
@@ -249,9 +253,9 @@ async function syncExerciseFromSets(sessionExerciseId, sessionId, connection = d
 }
 
 module.exports = {
-    findActive,
+    findCurrent,
     findByIdForUser,
-    findActiveDaySession,
+    findByIdForUserForUpdate,
     findHistory,
     getSummary,
     create,

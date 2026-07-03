@@ -54,7 +54,9 @@ export default function ActionSheet({
               className={`action-sheet-action ${action.tone === 'danger' ? 'danger' : ''}`}
               type="button"
               key={action.key || action.label}
+              disabled={action.disabled}
               onClick={() => {
+                if (action.disabled) return;
                 action.onSelect?.();
                 if (!action.keepOpen) onClose();
               }}

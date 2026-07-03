@@ -21,6 +21,10 @@ async function get(req, res) {
     res.json(await service.get(req.params.id, req.user.id));
 }
 
+async function current(req, res) {
+    res.json(await service.current(req.user.id));
+}
+
 async function update(req, res) {
     res.json(await service.update(req.params.id, req.body, req.user.id));
 }
@@ -47,14 +51,20 @@ async function finish(req, res) {
     res.json(await service.finish(req.params.id, req.body, req.user.id));
 }
 
+async function abandon(req, res) {
+    res.json(await service.abandon(req.params.id, req.user.id));
+}
+
 module.exports = {
     start,
     list,
     summary,
     evolution,
     get,
+    current,
     update,
     updateExercise,
     updateSet,
     finish,
+    abandon,
 };
