@@ -1,4 +1,5 @@
 import Icon from './Icon';
+import LastPerformanceInfo from './LastPerformanceInfo';
 import SetExecutionRow from './SetExecutionRow';
 
 function plannedValue(value, suffix = '') {
@@ -15,6 +16,7 @@ export default function ExerciseExecutionCard({
   onSetSave,
   onSetToggle,
   onStartRest,
+  showLastPerformance = false,
 }) {
   const sets = exercise.sets || [];
   const completedSets = sets.filter((set) => set.completed).length;
@@ -34,6 +36,10 @@ export default function ExerciseExecutionCard({
         </div>
         <span className="run-exercise-count">{completedSets}/{sets.length}</span>
       </header>
+
+      {showLastPerformance && (
+        <LastPerformanceInfo performance={exercise.last_performance} />
+      )}
 
       <div className="planned-strip">
         <span><small>Planejado</small><strong>{plannedValue(sets.length, ' séries')}</strong></span>

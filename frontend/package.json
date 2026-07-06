@@ -7,12 +7,21 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "cap:add:android": "cap add android",
+    "cap:sync": "npm run build && cap sync android",
+    "android:open": "cap open android",
+    "android:build:debug": "node scripts/build-apk.js",
+    "apk:copy": "node scripts/copy-apk.js",
+    "apk:debug": "node scripts/build-apk.js"
   },
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
+    "@capacitor/android": "^7.6.7",
+    "@capacitor/app": "^7.1.2",
+    "@capacitor/core": "^7.6.7",
     "@tailwindcss/vite": "^4.2.2",
     "axios": "^1.15.0",
     "react": "^19.2.4",
@@ -21,6 +30,8 @@
     "tailwindcss": "^4.2.2"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^7.6.7",
     "@eslint/js": "^9.39.4",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
@@ -29,7 +40,7 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.4.0",
+    "typescript": "^6.0.3",
     "vite": "^8.0.4"
   }
 }
-

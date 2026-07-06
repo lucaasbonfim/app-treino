@@ -62,6 +62,7 @@ function buildSnapshots(workouts) {
             for (const exercise of group.exercises) {
                 snapshots.push({
                     workout_exercise_id: exercise.id,
+                    exercise_library_id: exercise.exercise_library_id || null,
                     muscle_group_name: group.name,
                     exercise_name: exercise.name,
                     planned_sets: exercise.sets,
@@ -92,7 +93,18 @@ function persistSession(userId, sessionData, snapshots) {
         );
 
         const current = await repository.findCurrent(userId, transaction);
-        if (current) return { ...current, resumed: true };
+        if (current) {
+            return {
+                ...(await attachLastPerformances(userId, current, transaction)),
+                resumed: true,
+            };
+        }
+
+        const lastPerformances = await repository.findLastPerformances(
+            userId,
+            snapshots,
+            transaction,
+        );
 
         const session = await repository.create({
             user_id: userId,
@@ -106,6 +118,9 @@ function persistSession(userId, sessionData, snapshots) {
             snapshots.map((exercise) => ({
                 ...exercise,
                 workout_session_id: session.id,
+                last_performed_at: lastPerformances.get(
+                    repository.performanceKey(exercise),
+                )?.performed_at || null,
             })),
             transaction,
         );
@@ -113,7 +128,14 @@ function persistSession(userId, sessionData, snapshots) {
         const sets = [];
         for (const exercise of createdExercises) {
             const setCount = Math.max(1, Number(exercise.planned_sets) || 1);
+            const previousSets = lastPerformances.get(
+                repository.performanceKey(exercise),
+            )?.sets || [];
+            const previousByNumber = new Map(
+                previousSets.map((set) => [Number(set.set_number), set]),
+            );
             for (let setNumber = 1; setNumber <= setCount; setNumber += 1) {
+                const previous = previousByNumber.get(setNumber);
                 sets.push({
                     workout_session_id: session.id,
                     workout_session_exercise_id: exercise.id,
@@ -121,8 +143,11 @@ function persistSession(userId, sessionData, snapshots) {
                     set_number: setNumber,
                     planned_reps: exercise.planned_reps,
                     planned_weight: exercise.planned_weight,
-                    performed_reps: exercise.planned_reps,
-                    performed_weight: exercise.planned_weight,
+                    performed_reps: previous?.performed_reps ?? exercise.planned_reps,
+                    performed_weight: previous?.performed_weight ?? exercise.planned_weight,
+                    previous_performed_reps: previous?.performed_reps ?? null,
+                    previous_performed_weight: previous?.performed_weight ?? null,
+                    has_previous_performance: Boolean(previous),
                     completed: false,
                 });
             }
@@ -133,10 +158,33 @@ function persistSession(userId, sessionData, snapshots) {
     });
 }
 
+async function attachLastPerformances(userId, session, connection = db) {
+    if (!session || session.status !== 'in_progress') return session;
+    const missing = session.exercises.filter((exercise) => !exercise.last_performance);
+    if (!missing.length) return session;
+
+    const lastPerformances = await repository.findLastPerformances(
+        userId,
+        missing,
+        connection,
+    );
+    return {
+        ...session,
+        exercises: session.exercises.map((exercise) => ({
+            ...exercise,
+            last_performance: exercise.last_performance
+                || lastPerformances.get(repository.performanceKey(exercise))
+                || null,
+        })),
+    };
+}
+
 async function start(workoutIdValue, userId) {
     const workoutId = id(workoutIdValue, 'ID do treino');
     const current = await repository.findCurrent(userId);
-    if (current) return { ...current, resumed: true };
+    if (current) {
+        return { ...(await attachLastPerformances(userId, current)), resumed: true };
+    }
 
     const workout = await workoutRepository.findByIdForUser(workoutId, userId);
     if (!workout) throw notFound('Treino não encontrado.');
@@ -159,7 +207,9 @@ async function startForWorkouts(userId, workoutIds, name) {
     if (!ids.length) throw badRequest('Nenhum treino definido para iniciar.');
 
     const current = await repository.findCurrent(userId);
-    if (current) return { ...current, resumed: true };
+    if (current) {
+        return { ...(await attachLastPerformances(userId, current)), resumed: true };
+    }
     if (ids.length === 1) return start(ids[0], userId);
 
     const workouts = [];
@@ -187,11 +237,23 @@ async function get(sessionIdValue, userId) {
         userId,
     );
     if (!session) throw notFound('Sessão de treino não encontrada.');
-    return session;
+    return attachLastPerformances(userId, session);
 }
 
-function current(userId) {
-    return repository.findCurrent(userId);
+async function current(userId) {
+    return attachLastPerformances(userId, await repository.findCurrent(userId));
+}
+
+async function lastPerformance(sessionIdValue, userId) {
+    const session = await get(sessionIdValue, userId);
+    return session.exercises.map((exercise) => ({
+        exercise_id: exercise.id,
+        workout_exercise_id: exercise.workout_exercise_id,
+        exercise_library_id: exercise.exercise_library_id,
+        exercise_name: exercise.exercise_name,
+        last_performed_at: exercise.last_performance?.performed_at || null,
+        sets: exercise.last_performance?.sets || [],
+    }));
 }
 
 function history(userId) {
@@ -405,6 +467,7 @@ module.exports = {
     startForWorkouts,
     get,
     current,
+    lastPerformance,
     history,
     summary,
     evolution,

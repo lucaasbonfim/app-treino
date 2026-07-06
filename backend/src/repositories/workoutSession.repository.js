@@ -14,6 +14,34 @@ const sessionFields = [
     'updated_at',
 ];
 
+function normalizeExerciseName(value) {
+    return String(value || '').trim().toLocaleLowerCase('pt-BR');
+}
+
+function performanceKey(exercise) {
+    if (exercise.exercise_library_id !== null
+        && exercise.exercise_library_id !== undefined) {
+        return `library:${Number(exercise.exercise_library_id)}`;
+    }
+    return `name:${normalizeExerciseName(exercise.exercise_name)}`;
+}
+
+function snapshotLastPerformance(exercise, sets) {
+    const previousSets = sets
+        .filter((set) => set.has_previous_performance)
+        .map((set) => ({
+            set_number: set.set_number,
+            performed_reps: set.previous_performed_reps,
+            performed_weight: set.previous_performed_weight,
+        }));
+
+    if (!exercise.last_performed_at || !previousSets.length) return null;
+    return {
+        performed_at: exercise.last_performed_at,
+        sets: previousSets,
+    };
+}
+
 async function hydrate(sessions, connection = db) {
     if (!sessions.length) return [];
 
@@ -47,9 +75,11 @@ async function hydrate(sessions, connection = db) {
     const bySession = new Map();
     for (const exercise of exercises) {
         const current = bySession.get(exercise.workout_session_id) || [];
+        const exerciseSets = setsByExercise.get(exercise.id) || [];
         current.push({
             ...exercise,
-            sets: setsByExercise.get(exercise.id) || [],
+            last_performance: snapshotLastPerformance(exercise, exerciseSets),
+            sets: exerciseSets,
         });
         bySession.set(exercise.workout_session_id, current);
     }
@@ -66,6 +96,117 @@ async function hydrate(sessions, connection = db) {
         workout_status: session.workout_id ? statusByWorkout.get(session.workout_id) || null : null,
         exercises: bySession.get(session.id) || [],
     }));
+}
+
+async function findLastPerformances(userId, targetExercises, connection = db) {
+    const libraryIds = [...new Set(
+        targetExercises
+            .map((exercise) => exercise.exercise_library_id)
+            .filter((value) => value !== null && value !== undefined)
+            .map(Number),
+    )];
+    const names = [...new Set(
+        targetExercises
+            .map((exercise) => normalizeExerciseName(exercise.exercise_name))
+            .filter(Boolean),
+    )];
+    if (!libraryIds.length && !names.length) return new Map();
+
+    const libraryIdExpression = connection.raw(
+        'COALESCE(??, ??)',
+        ['e.exercise_library_id', 'we.exercise_library_id'],
+    );
+    const normalizedNameExpression = connection.raw(
+        'LOWER(BTRIM(??))',
+        ['e.exercise_name'],
+    );
+
+    const candidates = await connection('workout_session_exercises as e')
+        .join('workout_sessions as ws', 'ws.id', 'e.workout_session_id')
+        .leftJoin('workout_exercises as we', 'we.id', 'e.workout_exercise_id')
+        .where({ 'ws.user_id': userId, 'ws.status': 'completed' })
+        .whereExists(function completedSetExists() {
+            this.select(connection.raw('1'))
+                .from('workout_session_sets as completed_set')
+                .whereRaw('completed_set.workout_session_exercise_id = e.id')
+                .andWhere('completed_set.completed', true);
+        })
+        .andWhere(function matchesTargets() {
+            if (libraryIds.length) {
+                this.whereIn(libraryIdExpression, libraryIds);
+            }
+            if (names.length) {
+                const method = libraryIds.length ? 'orWhereIn' : 'whereIn';
+                this[method](normalizedNameExpression, names);
+            }
+        })
+        .select(
+            'e.id as session_exercise_id',
+            'e.exercise_name',
+            'ws.finished_at as performed_at',
+            connection.raw(
+                'COALESCE(??, ??) AS ??',
+                ['e.exercise_library_id', 'we.exercise_library_id', 'exercise_library_id'],
+            ),
+        )
+        .orderBy('ws.finished_at', 'desc')
+        .orderBy('ws.id', 'desc')
+        .orderBy('e.id', 'desc');
+
+    const requestedLibraryIds = new Set(libraryIds);
+    const requestedNames = new Set(names);
+    const selectedByKey = new Map();
+
+    for (const candidate of candidates) {
+        const libraryId = candidate.exercise_library_id === null
+            ? null
+            : Number(candidate.exercise_library_id);
+        const name = normalizeExerciseName(candidate.exercise_name);
+
+        if (libraryId !== null && requestedLibraryIds.has(libraryId)) {
+            const key = `library:${libraryId}`;
+            if (!selectedByKey.has(key)) selectedByKey.set(key, candidate);
+        }
+        if (requestedNames.has(name)) {
+            const key = `name:${name}`;
+            if (!selectedByKey.has(key)) selectedByKey.set(key, candidate);
+        }
+    }
+
+    const exerciseIds = [...new Set(
+        [...selectedByKey.values()].map((candidate) => candidate.session_exercise_id),
+    )];
+    const previousSets = exerciseIds.length
+        ? await connection('workout_session_sets')
+            .whereIn('workout_session_exercise_id', exerciseIds)
+            .andWhere({ completed: true })
+            .select(
+                'workout_session_exercise_id',
+                'set_number',
+                'performed_reps',
+                'performed_weight',
+            )
+            .orderBy('set_number', 'asc')
+        : [];
+
+    const setsByExercise = new Map();
+    for (const set of previousSets) {
+        const current = setsByExercise.get(set.workout_session_exercise_id) || [];
+        current.push({
+            set_number: set.set_number,
+            performed_reps: set.performed_reps,
+            performed_weight: set.performed_weight,
+        });
+        setsByExercise.set(set.workout_session_exercise_id, current);
+    }
+
+    return new Map([...selectedByKey].map(([key, candidate]) => [
+        key,
+        {
+            performed_at: candidate.performed_at,
+            sets: setsByExercise.get(candidate.session_exercise_id) || [],
+        },
+    ]));
 }
 
 async function findCurrent(userId, connection = db) {
@@ -253,6 +394,8 @@ async function syncExerciseFromSets(sessionExerciseId, sessionId, connection = d
 }
 
 module.exports = {
+    performanceKey,
+    findLastPerformances,
     findCurrent,
     findByIdForUser,
     findByIdForUserForUpdate,

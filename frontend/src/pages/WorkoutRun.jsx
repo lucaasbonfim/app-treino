@@ -227,6 +227,7 @@ export default function WorkoutRun() {
                     onSetSave={saveSet}
                     onSetToggle={toggleSet}
                     onStartRest={startManualRest}
+                    showLastPerformance={!readOnly}
                   />
                 ))}
               </div>

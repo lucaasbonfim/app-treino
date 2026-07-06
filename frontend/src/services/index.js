@@ -65,6 +65,11 @@ export const exerciseLibraryService = {
 export const workoutSessionService = {
   start: (workoutId) => runMutation(() => api.post(`/workouts/${workoutId}/sessions`)),
   current: (options) => cachedGet('/workout-sessions/current', {}, options),
+  lastPerformance: (id, options) => cachedGet(
+    `/workout-sessions/${id}/last-performance`,
+    {},
+    options,
+  ),
   list: (options) => cachedGet('/workout-sessions', {}, options),
   summary: (options) => cachedGet('/workout-sessions/summary', {}, options),
   evolution: (options) => cachedGet('/workout-sessions/evolution', {}, options),

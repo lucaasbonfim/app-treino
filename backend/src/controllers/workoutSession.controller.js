@@ -25,6 +25,10 @@ async function current(req, res) {
     res.json(await service.current(req.user.id));
 }
 
+async function lastPerformance(req, res) {
+    res.json(await service.lastPerformance(req.params.id, req.user.id));
+}
+
 async function update(req, res) {
     res.json(await service.update(req.params.id, req.body, req.user.id));
 }
@@ -62,6 +66,7 @@ module.exports = {
     evolution,
     get,
     current,
+    lastPerformance,
     update,
     updateExercise,
     updateSet,

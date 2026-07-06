@@ -9,6 +9,7 @@ router.get('/', controller.list);
 router.get('/summary', controller.summary);
 router.get('/evolution', controller.evolution);
 router.get('/current', controller.current);
+router.get('/:id/last-performance', controller.lastPerformance);
 router.get('/:id', controller.get);
 router.put('/:id', controller.update);
 router.post('/:id/finish', controller.finish);

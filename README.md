@@ -118,6 +118,80 @@ npm run lint
 npm run preview
 ```
 
+## Gerar APK Android
+
+O app Android é empacotado com [Capacitor](https://capacitorjs.com/). O APK contém **apenas o frontend**; a API precisa estar online (Render) e a variável `VITE_API_URL` precisa apontar para ela.
+
+### Pré-requisitos (uma vez)
+
+1. Instale o [Android Studio](https://developer.android.com/studio).
+2. Abra o Android Studio pelo menos uma vez para ele baixar o **Android SDK** e o **Gradle**.
+3. **JDK 21** é obrigatório (o Capacitor 7 compila o Android com Java 21). O Android Studio já traz um JDK 21 embutido (JBR) — o `apk:debug` usa esse JDK automaticamente, mesmo que o `JAVA_HOME` do sistema aponte para outra versão.
+4. Use **Node.js 20** (o Capacitor deste projeto está fixado na linha 7.x, compatível com Node 20; a v8 exige Node 22+).
+
+> O script `apk:debug` cria automaticamente o `android/local.properties` (localização do SDK) e escolhe um JDK 21+ para o Gradle. Ambos os arquivos são específicos da máquina e ficam fora do git.
+
+### Configurar a URL da API
+
+Edite `frontend/.env.production` e troque o valor pela URL real do backend no Render, **mantendo o sufixo `/api`**:
+
+```env
+# frontend/.env.production
+VITE_API_URL=https://SEU-BACKEND.onrender.com/api
+```
+
+No backend (Render), configure a variável `FRONTEND_URL` com a URL do frontend para liberá-la no CORS.
+
+### Gerar o APK
+
+```powershell
+cd frontend
+npm install
+npm run apk:debug
+```
+
+O comando `apk:debug` executa tudo automaticamente (Windows/Linux/macOS):
+
+1. `npm run build` — gera o bundle web em `frontend/dist/`.
+2. `cap add android` (só na primeira vez) e `cap sync android` — sincroniza o web + plugins.
+3. Gradle `assembleDebug` (`gradlew.bat` no Windows, `./gradlew` nos demais) — gera o APK.
+4. Copia o APK final para a raiz do repositório.
+
+O APK final fica em:
+
+```text
+temp/apk/korvix-gym-debug.apk
+```
+
+A pasta `temp/apk` é criada automaticamente e está no `.gitignore` (o APK não sobe para o GitHub).
+
+### Instalar no celular
+
+Copie `temp/apk/korvix-gym-debug.apk` para o Android e instale (é preciso permitir "instalar de fontes desconhecidas"). Como é um APK **debug** não assinado para a Play Store, serve para testes e distribuição manual.
+
+> **Sempre que alterar o frontend, gere o APK novamente** com `npm run apk:debug`.
+
+### Scripts disponíveis (frontend)
+
+```bash
+npm run apk:debug          # build web + sync + APK + copia para temp/apk
+npm run apk:copy           # apenas copia um APK já gerado para temp/apk
+npm run cap:sync           # build web + cap sync android
+npm run cap:add:android    # adiciona a plataforma android (uso pontual)
+npm run android:open       # abre o projeto no Android Studio
+```
+
+### Erros comuns
+
+| Erro | Solução |
+| --- | --- |
+| `The Capacitor CLI requires NodeJS >=22` | Alguém subiu o Capacitor para v8. Mantenha `@capacitor/*` na v7 **ou** atualize o Node para 22+. |
+| `Could not find installation of TypeScript` | Rode `npm install` (o `typescript` já está em devDependencies para ler o `capacitor.config.ts`). |
+| `SDK location not found` | Instale o Android Studio e **abra-o uma vez** para baixar o SDK. O `apk:debug` gera o `android/local.properties` sozinho; se preciso, defina `ANDROID_HOME`. |
+| `invalid source release: 21` | O Gradle pegou um JDK < 21 (ex.: `JAVA_HOME` apontando para JDK 17/20). O `apk:debug` já força o JDK 21 do Android Studio; se persistir, instale/abra o Android Studio ou aponte `JAVA_HOME` para um JDK 21. |
+| APK abre mas não carrega dados | `VITE_API_URL` no `.env.production` está errado ou com placeholder. Ajuste (com sufixo `/api`) e gere o APK de novo. |
+| App bloqueado por CORS | Configure `FRONTEND_URL` no backend (Render) e confirme que o backend com o novo CORS já foi publicado. |
+
 ## API
 
 Todas as rotas, exceto autenticação e health check, exigem `Authorization: Bearer <token>`.

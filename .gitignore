@@ -1,5 +1,20 @@
+# Dependências
 node_modules/
+
+# Variáveis de ambiente (nunca versionar segredos)
 .env
+.env.local
+.env.production.local
+
+# Build do frontend
+frontend/dist/
+
+# Artefatos do build Android (o projeto android/ em si é versionado)
+frontend/android/app/build/
+
+# Saída temporária do APK (não subir APK pesado por acidente)
+temp/
+
+# Logs e arquivos do sistema
 *.log
 .DS_Store
-
