@@ -5390,3 +5390,150 @@ body { background: var(--surface); }
   cursor: wait;
   opacity: 0.6;
 }
+
+/* ============================================================
+   Responsivo — tablet e desktop
+   Aditivo: as regras base (mobile) permanecem inalteradas.
+   ============================================================ */
+
+/* Sidebar de desktop fica oculta no mobile/tablet (usam a bottom-nav) */
+.side-nav {
+  display: none;
+}
+
+/* Tablet: coluna central mais larga, mantendo a barra inferior */
+@media (min-width: 768px) {
+  .app-frame {
+    max-width: 720px;
+  }
+
+  .header-inner,
+  .app-content {
+    padding-right: 1.75rem;
+    padding-left: 1.75rem;
+  }
+}
+
+/* Desktop: navegação lateral fixa substitui a barra inferior */
+@media (min-width: 1024px) {
+  .app-frame {
+    max-width: none;
+    margin: 0;
+    padding-left: 17rem;
+    padding-bottom: 2.5rem;
+    box-shadow: none;
+  }
+
+  :root[data-theme="dark"] .app-frame {
+    box-shadow: none;
+  }
+
+  /* Telas imersivas (ex.: execução do treino) seguem em coluna central */
+  .app-frame.without-nav {
+    max-width: 640px;
+    margin: 0 auto;
+    padding-left: 0;
+  }
+
+  .side-nav {
+    position: fixed;
+    z-index: 40;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    display: flex;
+    width: 17rem;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 1.25rem 0.9rem;
+    border-right: 1px solid color-mix(in srgb, var(--outline) 60%, transparent);
+    background: var(--surface);
+  }
+
+  .side-nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.35rem 0.6rem 1rem;
+  }
+
+  .side-nav-logo {
+    width: 2.6rem;
+    height: 2.6rem;
+    flex: 0 0 auto;
+    border-radius: 0.85rem;
+    box-shadow: 0 10px 24px rgb(0 183 255 / 0.2);
+  }
+
+  .side-nav-brand span {
+    color: var(--text);
+    font: 800 1.05rem "Manrope", sans-serif;
+  }
+
+  .side-nav-links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .side-nav-links a {
+    display: flex;
+    min-height: 3rem;
+    align-items: center;
+    gap: 0.75rem;
+    border-radius: 0.9rem;
+    padding: 0 0.85rem;
+    color: var(--muted);
+    font: 700 0.85rem "Inter", sans-serif;
+    transition: background 150ms ease, color 150ms ease;
+  }
+
+  .side-nav-links a:hover {
+    color: var(--text);
+    background: var(--container);
+  }
+
+  .side-nav-links a.active {
+    color: white;
+    background: linear-gradient(135deg, #006884, var(--primary));
+  }
+
+  .side-nav-theme {
+    display: flex;
+    min-height: 3rem;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: auto;
+    border-radius: 0.9rem;
+    padding: 0 0.85rem;
+    color: var(--muted);
+    background: var(--container);
+    font: 700 0.82rem "Inter", sans-serif;
+  }
+
+  .bottom-nav {
+    display: none;
+  }
+
+  .header-inner,
+  .app-content {
+    max-width: 800px;
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  .app-content {
+    padding: 1.85rem 1.75rem;
+  }
+
+  /* Listas ocupam o espaço em duas colunas */
+  .workout-list,
+  .group-list,
+  .history-list,
+  .evolution-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.9rem;
+    align-items: start;
+  }
+}
