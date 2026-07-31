@@ -95,11 +95,51 @@ O backend carrega `backend/.env`. Todas as chaves necessárias estão em `backen
 
 Para usar Brevo, preencha `BREVO_API_KEY` e `SMTP_FROM`. Para usar somente SMTP, deixe `BREVO_API_KEY` vazio e preencha todas as chaves `SMTP_*`. Em desenvolvimento, se Brevo e SMTP estiverem vazios, o e-mail completo e o código aparecem no terminal do backend.
 
-O frontend usa somente:
+O frontend usa:
 
 ```env
 VITE_API_URL=http://localhost:3001/api
+VITE_GOOGLE_CLIENT_ID=              # opcional, veja "Login com Google"
 ```
+
+## Login com Google
+
+O botão fica na tela de login, acima do formulário de e-mail e senha. Use um **Client ID OAuth do tipo "Aplicativo Web"** do Google Cloud Console e coloque **o mesmo valor** nos dois lados: `GOOGLE_CLIENT_ID` em `backend/.env` e `VITE_GOOGLE_CLIENT_ID` em `frontend/.env`.
+
+Os dois são obrigatórios, por motivos diferentes: o frontend precisa dele para desenhar o botão; o backend usa para conferir o campo `aud` do token recebido. Sem essa conferência, um token emitido para o login do Google de qualquer outro site seria aceito aqui. Com as variáveis vazias, o recurso fica desligado sem quebrar nada: o botão some e `POST /api/auth/google` responde 503.
+
+Em *Authorized JavaScript origins*, no Console, cadastre `http://localhost:5173` para desenvolvimento e a URL do frontend publicado. O Client ID não é segredo — ele vai no bundle do frontend de qualquer jeito. Segredo é o *Client Secret*, que este fluxo nem usa: o app só valida o ID token, sem troca de código.
+
+Não há cadastro automático. Se o e-mail do Google ainda não tiver conta, a API responde 404 e o app leva a pessoa ao cadastro com nome e e-mail já preenchidos, faltando escolher a senha.
+
+## Montar treino com IA (Gemini)
+
+Em **Meus treinos → Montar com IA**, três caminhos:
+
+- **Pedir** — a pessoa informa nível, objetivo, quantos dias por semana treina e observações livres (lesões, equipamento disponível), e a IA monta a rotina do zero, já dividida na semana.
+- **Escrever** — cola a ficha que já tem em texto.
+- **Foto** — manda uma foto do papel da academia, print de app ou anotação no caderno.
+
+Nos três casos o resultado é o mesmo JSON: treinos com nome, dias da semana, seções e exercícios com séries, repetições, carga e descanso. A tela seguinte mostra tudo para conferir e ajustar; só o botão final grava, numa transação única.
+
+Configure em `backend/.env`:
+
+```env
+GEMINI_API_KEY=                    # chave do Google AI Studio (aistudio.google.com/apikey)
+GEMINI_MODEL=gemini-3.5-flash-lite
+GEMINI_THINKING_LEVEL=low          # minimal | low | medium | high
+```
+
+Sem `GEMINI_API_KEY` o recurso fica desligado e o app esconde o botão (`GET /api/ai/status` responde `{ "enabled": false }`). O que a IA devolve é sempre normalizado no servidor: ícone, dias, séries e descanso caem nas opções válidas do app, exercícios conhecidos são vinculados à biblioteca pelo nome (para o histórico e a evolução casarem) e um plano vazio é recusado. Há um limite de 8 pedidos por minuto por usuário.
+
+Decisões que custaram para chegar e é melhor não desfazer sem medir:
+
+- **`gemini-3.5-flash-lite`, não `gemini-3.6-flash`.** A cota gratuita é por modelo e por dia: 500 requisições/dia no Lite contra **20** no Flash normal. Na prática o Flash normal esgota num dia de desenvolvimento. A qualidade do Lite se mostrou equivalente nesta tarefa.
+- **`GEMINI_THINKING_LEVEL=low`.** Com `medium` o mesmo pedido leva mais de 60s e estoura o timeout; com `minimal` a montagem volta `incomplete`. Em `low`, ler uma ficha leva ~4s e montar uma rotina ~11s, com o mesmo resultado.
+- **`reps` é obrigatório no schema.** Sendo opcional, o modelo preenchia `sets`, `weight` e `rest_time_seconds` e simplesmente pulava as repetições em todos os exercícios. String vazia é a saída quando a ficha não informa.
+- **Nada de `maxItems` no schema.** A Interactions API responde `400 invalid_request` sem dizer qual campo. Os tetos de tamanho ficam em `normalizePlan`.
+
+Séries e repetições que a leitura não trouxer ficam **vazias** na conferência — de propósito. Preencher com o padrão da biblioteca escondia justamente o campo que a pessoa precisa corrigir. Só o descanso herda o padrão, porque a execução do treino precisa de um número.
 
 ## Comandos úteis
 
@@ -227,6 +267,12 @@ GET    /api/workout-sessions/:id
 PUT    /api/workout-sessions/:id
 POST   /api/workout-sessions/:id/finish
 PUT    /api/workout-sessions/:sessionId/exercises/:exerciseId
+
+POST   /api/auth/google
+
+GET    /api/ai/status
+POST   /api/ai/workout-plan/preview
+POST   /api/ai/workout-plan/import
 ```
 
 As consultas e alterações de treino, grupo, exercício e sessão verificam o `user_id` do token. Sessões guardam snapshots dos nomes e valores planejados para preservar o histórico.

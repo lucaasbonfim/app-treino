@@ -6,12 +6,15 @@ const verificationRepository = require('../repositories/emailVerification.reposi
 const { sendVerificationCodeEmail, sendEmailChangeCode } = require('./email.service');
 const { requiredText } = require('../utils/validation');
 const {
+    HttpError,
     badRequest,
     conflict,
+    notFound,
     unauthorized,
 } = require('../utils/httpError');
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const GOOGLE_TOKENINFO_URL = 'https://oauth2.googleapis.com/tokeninfo';
 
 function normalizeEmail(value) {
     return String(value ?? '').trim().toLowerCase();
@@ -136,6 +139,52 @@ async function login(payload) {
     return authResponse(user);
 }
 
+// Valida o ID token no endpoint público do Google: ele já confere assinatura e
+// expiração, então aqui só resta garantir que o token foi emitido para este app.
+async function verifyGoogleCredential(credential, clientId) {
+    let response;
+    try {
+        response = await fetch(`${GOOGLE_TOKENINFO_URL}?id_token=${encodeURIComponent(credential)}`);
+    } catch {
+        throw new HttpError(503, 'Não foi possível falar com o Google agora. Tente de novo.');
+    }
+
+    if (!response.ok) throw unauthorized('Não foi possível validar o login com Google.');
+
+    const profile = await response.json();
+
+    if (profile.aud !== clientId) {
+        throw unauthorized('Este login do Google não pertence ao KorVix Gym.');
+    }
+    if (profile.email_verified !== 'true' && profile.email_verified !== true) {
+        throw unauthorized('O e-mail da conta Google ainda não foi verificado.');
+    }
+
+    const email = normalizeEmail(profile.email);
+    if (!emailPattern.test(email)) {
+        throw unauthorized('A conta Google não retornou um e-mail válido.');
+    }
+
+    return email;
+}
+
+async function googleLogin(payload) {
+    const clientId = String(process.env.GOOGLE_CLIENT_ID ?? '').trim();
+    if (!clientId) throw new HttpError(503, 'Login com Google não está configurado no servidor.');
+
+    const credential = String(payload.credential ?? '').trim();
+    if (!credential) throw badRequest('Token do Google não informado.');
+
+    const email = await verifyGoogleCredential(credential, clientId);
+
+    // Sem cadastro automático: o 404 é o sinal para o app levar a pessoa ao
+    // cadastro com nome e e-mail já preenchidos.
+    const user = await userRepository.findByEmail(email);
+    if (!user) throw notFound('Ainda não existe conta com este e-mail.');
+
+    return authResponse(user);
+}
+
 async function updateName(userId, payload) {
     const name = requiredText(payload.name, 'Nome', 100);
     const user = await userRepository.update(userId, { name });
@@ -225,6 +274,7 @@ module.exports = {
     register,
     verifyRegisterCode,
     login,
+    googleLogin,
     updateName,
     changePassword,
     requestEmailChange,

@@ -1,13 +1,16 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/auth-context';
 import { errorMessage } from '../services/api';
 import Icon from '../components/Icon';
 
 export default function Register() {
+  const location = useLocation();
+  // Quem chegou aqui pelo botão do Google já tem nome e e-mail; só falta a senha.
+  const googlePrefill = location.state?.googlePrefill;
   const [form, setForm] = useState({
-    name: '',
-    email: '',
+    name: googlePrefill?.name || '',
+    email: googlePrefill?.email || '',
     password: '',
     confirmPassword: '',
   });
@@ -84,6 +87,12 @@ export default function Register() {
               : 'Antes de criar a conta, enviaremos um código para confirmar seu e-mail.'}
           </p>
         </div>
+
+        {googlePrefill && !codeSent && (
+          <p className="success-banner">
+            Ainda não há conta com {googlePrefill.email}. Escolha uma senha para criar a sua.
+          </p>
+        )}
 
         <form className="form-stack" onSubmit={submit}>
           <label className="field">

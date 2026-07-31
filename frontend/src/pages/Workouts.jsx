@@ -7,7 +7,7 @@ import DaySelectModal from '../components/DaySelectModal';
 import Icon from '../components/Icon';
 import WorkoutStatusBadge from '../components/WorkoutStatusBadge';
 import { EmptyView, LoadingView } from '../components/StatusView';
-import { apiCache, scheduleService, workoutService } from '../services';
+import { aiService, apiCache, scheduleService, workoutService } from '../services';
 import { errorMessage } from '../services/api';
 import { shortDayName, sortDaysMonFirst } from '../utils/days';
 import { workoutIcon } from '../utils/workoutIcons';
@@ -35,6 +35,7 @@ export default function Workouts() {
   const [error, setError] = useState('');
   const [actionWorkout, setActionWorkout] = useState(null);
   const [daysModalWorkout, setDaysModalWorkout] = useState(null);
+  const [aiEnabled, setAiEnabled] = useState(() => Boolean(apiCache.getData('/ai/status')?.enabled));
   const navigate = useNavigate();
 
   const load = useCallback(async (options) => {
@@ -65,6 +66,15 @@ export default function Workouts() {
         if (active) setError(errorMessage(requestError, 'Não foi possível carregar os treinos.'));
       })
       .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
+
+  // O atalho da IA só aparece quando o servidor tem a chave configurada.
+  useEffect(() => {
+    let active = true;
+    aiService.status()
+      .then(({ data }) => { if (active) setAiEnabled(Boolean(data.enabled)); })
+      .catch(() => {});
     return () => { active = false; };
   }, []);
 
@@ -173,15 +183,24 @@ export default function Workouts() {
     ];
   }
 
+  const createButtons = (
+    <div className="create-workout-actions">
+      <Link className="button button-primary button-large" to="/workouts/new">
+        <Icon>add</Icon> Novo treino
+      </Link>
+      {aiEnabled && (
+        <Link className="button button-large button-ai" to="/workouts/import">
+          <Icon>auto_awesome</Icon> Montar com IA
+        </Link>
+      )}
+    </div>
+  );
+
   return (
     <AppShell title="Meus treinos" subtitle="Seus treinos e blocos">
       <CurrentWorkoutCard />
 
-      {!loading && !error && workouts.length > 0 && (
-        <Link className="button button-primary button-large" to="/workouts/new">
-          <Icon>add</Icon> Novo treino
-        </Link>
-      )}
+      {!loading && !error && workouts.length > 0 && createButtons}
 
       {error && (
         <div className="error-banner with-action">
@@ -192,8 +211,13 @@ export default function Workouts() {
       {loading && <LoadingView />}
       {!loading && !error && workouts.length === 0 && (
         <>
-          <EmptyView title="Sua semana começa aqui" text="Crie o primeiro treino, adicione exercícios e depois escolha os dias." />
-          <Link className="button button-primary button-large" to="/workouts/new"><Icon>add</Icon> Novo treino</Link>
+          <EmptyView
+            title="Sua semana começa aqui"
+            text={aiEnabled
+              ? 'Mande a sua ficha por texto ou foto e a IA monta tudo, ou crie o treino do zero.'
+              : 'Crie o primeiro treino, adicione exercícios e depois escolha os dias.'}
+          />
+          {createButtons}
         </>
       )}
       {!loading && workouts.length > 0 && (

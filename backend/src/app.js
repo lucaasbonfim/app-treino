@@ -14,6 +14,7 @@ const exerciseLibraryRoutes = require('./routes/exerciseLibrary.routes');
 const workoutSessionRoutes = require('./routes/workoutSession.routes');
 const progressRoutes = require('./routes/progress.routes');
 const scheduleRoutes = require('./routes/schedule.routes');
+const aiRoutes = require('./routes/ai.routes');
 const { notFound, errorHandler } = require('./middlewares/error.middleware');
 
 const app = express();
@@ -47,7 +48,13 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
 }));
-app.use(express.json({ limit: '1mb' }));
+// A leitura de ficha por IA recebe a foto em base64 no corpo, então precisa de
+// um teto maior que o do resto da API.
+const json = express.json({ limit: '1mb' });
+const jsonWithPhoto = express.json({ limit: '10mb' });
+app.use((req, res, next) => (
+    req.path.startsWith(`${API}/ai/`) ? jsonWithPhoto(req, res, next) : json(req, res, next)
+));
 
 app.get('/health', (req, res) => {
     res.json({
@@ -65,6 +72,7 @@ app.use(`${API}/exercise-library`, exerciseLibraryRoutes);
 app.use(`${API}/workout-sessions`, workoutSessionRoutes);
 app.use(`${API}/progress`, progressRoutes);
 app.use(`${API}/schedule`, scheduleRoutes);
+app.use(`${API}/ai`, aiRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

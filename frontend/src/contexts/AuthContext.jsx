@@ -43,6 +43,11 @@ export function AuthProvider({ children }) {
     saveSession(data);
   }, [saveSession]);
 
+  const loginWithGoogle = useCallback(async (credential) => {
+    const { data } = await authService.googleLogin({ credential });
+    saveSession(data);
+  }, [saveSession]);
+
   const register = useCallback(async (name, email, password) => {
     const { data } = await authService.register({ name, email, password });
     return data;
@@ -61,11 +66,12 @@ export function AuthProvider({ children }) {
   const value = useMemo(() => ({
     ...session,
     login,
+    loginWithGoogle,
     register,
     confirmRegisterCode,
     updateUser,
     logout: clearSession,
-  }), [clearSession, confirmRegisterCode, login, register, session, updateUser]);
+  }), [clearSession, confirmRegisterCode, login, loginWithGoogle, register, session, updateUser]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

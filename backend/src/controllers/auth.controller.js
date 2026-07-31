@@ -12,6 +12,10 @@ async function login(req, res) {
     res.json(await service.login(req.body));
 }
 
+async function googleLogin(req, res) {
+    res.json(await service.googleLogin(req.body));
+}
+
 function me(req, res) {
     res.json({ user: req.user });
 }
@@ -36,6 +40,7 @@ module.exports = {
     register,
     verifyRegisterCode,
     login,
+    googleLogin,
     me,
     updateName,
     changePassword,

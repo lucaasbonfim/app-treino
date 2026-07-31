@@ -1226,6 +1226,48 @@ option,
   background: transparent;
 }
 
+/* Bloco do "Entrar com Google": o botão em si é um iframe renderizado pelo
+   Google, então aqui só cuidamos do espaçamento e do separador. */
+.google-signin {
+  display: grid;
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.google-signin-button {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+}
+
+.google-signin-status {
+  margin: 0;
+  color: var(--primary);
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.google-signin-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.google-signin-divider::before,
+.google-signin-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
 .auth-link {
   margin: 1rem 0 0;
   color: var(--muted);
@@ -5564,5 +5606,287 @@ body { background: var(--surface); }
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.9rem;
     align-items: start;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Montar treino com IA (leitura de ficha por texto ou foto)
+--------------------------------------------------------------------------- */
+.visually-hidden {
+  position: absolute;
+  overflow: hidden;
+  width: 1px;
+  height: 1px;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.create-workout-actions {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.button-ai {
+  color: var(--primary);
+  background: var(--primary-soft);
+  box-shadow: inset 0 0 0 1px rgb(0 122 159 / 0.18);
+}
+
+.ai-actions {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.ai-actions .button {
+  width: 100%;
+}
+
+/* Alternador "Pedir" / "Escrever" / "Foto" */
+.ai-source-switch {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.35rem;
+  border-radius: var(--radius);
+  padding: 0.3rem;
+  background: var(--container);
+}
+
+.ai-source-switch button {
+  display: inline-flex;
+  min-height: 2.7rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border-radius: 0.8rem;
+  color: var(--muted);
+  background: transparent;
+  font: 800 0.76rem "Manrope", sans-serif;
+  transition: color 120ms ease, background 120ms ease;
+}
+
+.ai-source-switch button .material-symbols-outlined {
+  font-size: 1.05rem;
+}
+
+.ai-source-switch button.selected {
+  color: var(--text);
+  background: var(--card);
+  box-shadow: 0 4px 12px rgb(7 16 24 / 0.08);
+}
+
+/* Escolha da foto da ficha */
+.ai-photo-picker {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.ai-photo-drop {
+  display: grid;
+  gap: 0.3rem;
+  justify-items: center;
+  border: 1px dashed var(--outline);
+  border-radius: var(--radius);
+  padding: 1.6rem 1rem;
+  color: var(--muted);
+  background: var(--surface);
+  text-align: center;
+}
+
+.ai-photo-drop .material-symbols-outlined {
+  margin-bottom: 0.2rem;
+  color: var(--primary);
+  font-size: 1.9rem;
+}
+
+.ai-photo-drop strong {
+  color: var(--text);
+  font: 800 0.85rem "Manrope", sans-serif;
+}
+
+.ai-photo-drop span {
+  font-size: 0.7rem;
+  line-height: 1.4;
+}
+
+.ai-photo-preview {
+  width: 100%;
+  max-height: 22rem;
+  border-radius: var(--radius);
+  object-fit: contain;
+  background: var(--container);
+}
+
+/* Conferência do plano lido pela IA */
+.ai-plan-card {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.ai-plan-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.ai-plan-heading {
+  min-width: 0;
+  flex: 1;
+}
+
+.ai-plan-title {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--outline);
+  border-radius: 0;
+  padding: 0.3rem 0;
+  color: var(--text);
+  background: transparent;
+  font: 800 1.05rem "Manrope", sans-serif;
+}
+
+.ai-plan-title:focus {
+  border-bottom-color: var(--primary);
+  outline: none;
+}
+
+.ai-icon-row {
+  display: flex;
+  gap: 0.35rem;
+  overflow-x: auto;
+  padding-bottom: 0.15rem;
+  scrollbar-width: none;
+}
+
+.ai-icon-row::-webkit-scrollbar {
+  display: none;
+}
+
+.ai-icon-row button {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 0.8rem;
+  color: var(--muted);
+  background: var(--container);
+  transition: transform 120ms ease, background 120ms ease;
+}
+
+.ai-icon-row button:active {
+  transform: scale(0.93);
+}
+
+.ai-icon-row button.selected {
+  color: #04121a;
+  background: linear-gradient(160deg, var(--primary-bright), var(--primary));
+}
+
+.ai-icon-row .material-symbols-outlined {
+  font-size: 1.15rem;
+}
+
+.ai-plan-block {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.ai-plan-label {
+  color: var(--muted);
+  font: 800 0.62rem "Manrope", sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ai-plan-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.68rem;
+  line-height: 1.45;
+}
+
+.ai-exercise-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ai-exercise-list .exercise-row {
+  align-items: center;
+  padding-right: 0;
+  padding-left: 0;
+}
+
+.ai-exercise-list li:first-child {
+  border-top: 0;
+}
+
+.ai-row-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.25rem;
+}
+
+.ai-plan-foot {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.ai-plan-foot .material-symbols-outlined {
+  font-size: 0.95rem;
+}
+
+:root[data-theme="dark"] .button-ai {
+  box-shadow: inset 0 0 0 1px rgb(34 201 226 / 0.28);
+}
+
+:root[data-theme="dark"] .ai-source-switch button.selected {
+  box-shadow: none;
+}
+
+:root[data-theme="dark"] .ai-exercise-list .exercise-row {
+  border-top-color: rgb(255 255 255 / 0.07);
+}
+
+
+/* Chips de nivel / objetivo / frequencia (modo "pedir treino") */
+.ai-choice {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.ai-choice-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.ai-choice-options button {
+  min-height: 2.5rem;
+  border-radius: 0.8rem;
+  padding: 0 0.85rem;
+  color: var(--muted);
+  background: var(--container);
+  font: 800 0.72rem "Manrope", sans-serif;
+  transition: transform 120ms ease, color 120ms ease, background 120ms ease;
+}
+
+.ai-choice-options button:active {
+  transform: scale(0.96);
+}
+
+.ai-choice-options button.selected {
+  color: #04121a;
+  background: linear-gradient(160deg, var(--primary-bright), var(--primary));
+}
+
+@media (min-width: 768px) {
+  .create-workout-actions,
+  .ai-actions {
+    grid-template-columns: 1fr 1fr;
   }
 }

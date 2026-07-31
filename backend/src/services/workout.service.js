@@ -3,21 +3,11 @@ const groupRepository = require('../repositories/muscleGroup.repository');
 const scheduleRepository = require('../repositories/schedule.repository');
 const { requiredText, optionalText, integer, id } = require('../utils/validation');
 const { badRequest, notFound } = require('../utils/httpError');
-
-const workoutIcons = new Set([
-    'fitness_center',
-    'directions_run',
-    'sports_gymnastics',
-    'self_improvement',
-    'sports_martial_arts',
-    'hiking',
-    'favorite',
-    'local_fire_department',
-]);
+const { WORKOUT_ICON_SET, DEFAULT_WORKOUT_ICON } = require('../utils/workoutOptions');
 
 function validate(payload) {
-    const icon = String(payload.icon || 'fitness_center');
-    if (!workoutIcons.has(icon)) throw badRequest('Selecione um ícone válido para o treino.');
+    const icon = String(payload.icon || DEFAULT_WORKOUT_ICON);
+    if (!WORKOUT_ICON_SET.has(icon)) throw badRequest('Selecione um ícone válido para o treino.');
 
     return {
         title: requiredText(payload.title, 'Nome do treino', 120),

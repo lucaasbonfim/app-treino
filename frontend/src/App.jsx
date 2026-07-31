@@ -7,6 +7,7 @@ import Home from './pages/Home';
 import Agenda from './pages/Agenda';
 import Workouts from './pages/Workouts';
 import WorkoutForm from './pages/WorkoutForm';
+import WorkoutImport from './pages/WorkoutImport';
 import WorkoutDetail from './pages/WorkoutDetail';
 import Profile from './pages/Profile';
 import WorkoutRun from './pages/WorkoutRun';
@@ -25,6 +26,7 @@ export default function App() {
         <Route path="/workouts" element={<Workouts />} />
         <Route path="/workouts/archived" element={<ArchivedWorkouts />} />
         <Route path="/workouts/new" element={<WorkoutForm />} />
+        <Route path="/workouts/import" element={<WorkoutImport />} />
         <Route path="/workouts/:id" element={<WorkoutDetail />} />
         <Route path="/workouts/:id/edit" element={<WorkoutForm />} />
         <Route path="/profile" element={<Profile />} />

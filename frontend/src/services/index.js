@@ -5,6 +5,7 @@ export { apiCache };
 
 export const authService = {
   login: (data) => runMutation(() => api.post('/auth/login', data)),
+  googleLogin: (data) => runMutation(() => api.post('/auth/google', data)),
   register: (data) => runMutation(() => api.post('/auth/register', data)),
   verifyRegisterCode: (data) => runMutation(() => api.post('/auth/register/verify', data)),
   me: () => cachedGet('/auth/me'),
@@ -60,6 +61,17 @@ export const exerciseLibraryService = {
   list: (params, options) => cachedGet('/exercise-library', params ? { params } : {}, options),
   groups: (options) => cachedGet('/exercise-library/groups', {}, options),
   get: (id, options) => cachedGet(`/exercise-library/${id}`, {}, options),
+};
+
+// Ler uma ficha (ainda mais uma foto) leva bem mais que os 15s padrão do axios.
+const AI_TIMEOUT = 120000;
+
+export const aiService = {
+  status: (options) => cachedGet('/ai/status', {}, options),
+  previewWorkoutPlan: (data) => api.post('/ai/workout-plan/preview', data, { timeout: AI_TIMEOUT }),
+  importWorkoutPlan: (plan) => runMutation(
+    () => api.post('/ai/workout-plan/import', { plan }, { timeout: AI_TIMEOUT }),
+  ),
 };
 
 export const workoutSessionService = {

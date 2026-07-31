@@ -3,12 +3,11 @@ const groupRepository = require('../repositories/muscleGroup.repository');
 const libraryRepository = require('../repositories/exerciseLibrary.repository');
 const { requiredText, optionalText, integer, decimal, id } = require('../utils/validation');
 const { badRequest, notFound } = require('../utils/httpError');
-
-const REST_TIMES = new Set([30, 45, 60, 90, 120]);
+const { REST_TIME_SET, DEFAULT_REST_TIME } = require('../utils/workoutOptions');
 
 function restTime(value) {
-    const seconds = integer(value ?? 60, 'Tempo de descanso', { min: 30, max: 120 });
-    if (!REST_TIMES.has(seconds)) {
+    const seconds = integer(value ?? DEFAULT_REST_TIME, 'Tempo de descanso', { min: 30, max: 120 });
+    if (!REST_TIME_SET.has(seconds)) {
         throw badRequest('Selecione um tempo de descanso válido.');
     }
     return seconds;
