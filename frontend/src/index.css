@@ -1234,14 +1234,48 @@ option,
   margin-bottom: 1rem;
 }
 
-/* O botão vem num iframe do Google e tem largura própria — que muda conforme
-   o estado (o botão de quem já entrou antes é bem mais largo). Não force
-   largura nem overflow aqui: corta o conteúdo dentro do iframe. */
+/* O botão do Google é renderizado invisível (.google-signin-slot) exatamente
+   por cima do nosso (.google-signin-face), que é só a aparência. O clique cai
+   no iframe do Google; o visual é o do app em qualquer estado. A altura de
+   40px é a que o Google usa em size:'large' — mudar aqui desalinha o clique. */
 .google-signin-button {
+  position: relative;
+}
+
+.google-signin-face {
   display: flex;
-  min-height: 44px;
+  height: 40px;
   align-items: center;
   justify-content: center;
+  gap: 0.6rem;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--container);
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.google-signin-logo {
+  display: flex;
+  width: 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #fff;
+}
+
+/* Sem isto, quem navega pelo teclado foca um botão que não aparece. */
+.google-signin-button:focus-within .google-signin-face {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.google-signin-slot {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
 }
 
 .google-signin-status {
