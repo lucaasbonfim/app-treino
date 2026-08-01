@@ -73,13 +73,15 @@ export default function Login() {
         if (cancelled || !button.isConnected) return;
         const identity = initializeGoogleIdentity(googleClientId, handleGoogleCredential);
         button.innerHTML = '';
+        // filled_black é a variante escura do Google — 'outline' renderiza um
+        // botão branco que destoa do tema. Sem width fixo: o iframe se ajusta
+        // ao conteúdo em vez de estourar a largura do card.
         identity.renderButton(button, {
           theme: 'filled_black',
           size: 'large',
           shape: 'pill',
           text: 'continue_with',
           locale: 'pt-BR',
-          width: 280,
         });
       })
       .catch(() => {

@@ -1234,11 +1234,18 @@ option,
   margin-bottom: 1rem;
 }
 
+/* O botão vem num iframe do Google: não dá para estilizar por dentro, então
+   aqui só garantimos que ele nunca ultrapasse a largura do card. */
 .google-signin-button {
   display: flex;
   min-height: 44px;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+}
+
+.google-signin-button iframe {
+  max-width: 100% !important;
 }
 
 .google-signin-status {
