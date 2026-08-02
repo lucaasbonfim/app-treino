@@ -8,56 +8,76 @@ function dayLabel(value) {
 }
 
 export default function ProgressDetails({ summary, monthly, onClose, onEditGoal }) {
+  const goalFromSchedule = summary.goal_source === 'schedule';
+
+  // "Meta semanal" e "Treinos na semana" saíram daqui: os dois só repetiam o
+  // "1/5 treinos" que já aparece grande no topo do modal.
   const stats = [
-    { label: 'Meta semanal', value: dayLabel(summary.goal), icon: 'target' },
-    { label: 'Treinos na semana', value: `${summary.completed}/${summary.goal}`, icon: 'exercise' },
-    { label: 'Sequência atual', value: dayLabel(summary.streak), icon: 'local_fire_department' },
-    { label: 'Melhor sequência', value: dayLabel(summary.best_streak), icon: 'trophy' },
-    { label: 'Check-ins no mês', value: `${monthly?.count ?? 0}`, icon: 'calendar_month' },
+    { label: 'Sequência', value: dayLabel(summary.streak), icon: 'local_fire_department' },
+    { label: 'Recorde', value: dayLabel(summary.best_streak), icon: 'trophy' },
+    { label: 'No mês', value: `${monthly?.count ?? 0}`, icon: 'calendar_month' },
   ];
 
   return (
     <Modal title="Progresso" subtitle="Sua constância nos treinos" onClose={onClose}>
-      <section className="progress-hero">
-        <div>
-          <span className="eyebrow">Esta semana</span>
-          <strong>{summary.completed}/{summary.goal} treinos</strong>
-          <p>{summary.message}</p>
-        </div>
-        <ProgressBar percent={summary.progress_percent} />
-      </section>
+      {/* O espaçamento entre os blocos vem todo do stack: cada bloco cuidando da
+          própria margem era o que deixava a fileira de dias colada na agenda. */}
+      <div className="progress-stack">
+        <section className="progress-hero">
+          <div>
+            <span className="eyebrow">Esta semana</span>
+            <strong>{summary.completed}/{summary.goal} treinos</strong>
+            <p>{summary.message}</p>
+          </div>
+          <ProgressBar percent={summary.progress_percent} />
+        </section>
 
-      <WeekDaysStatus days={summary.week_days} />
+        <section className="progress-block" aria-label="Dias da semana">
+          <span className="eyebrow">Sua semana</span>
+          <WeekDaysStatus days={summary.week_days} />
+        </section>
 
-      {summary.plan?.planned > 0 && (
-        <section className="plan-summary" aria-label="Agenda semanal">
-          <header className="plan-summary-head">
+        {/* Com a meta derivada da agenda, "planejado" virou o denominador do
+            topo e "pendente" é a subtração dele. Sobra o formato da agenda. */}
+        {summary.plan?.planned > 0 && (
+          <section className="progress-block" aria-label="Agenda semanal">
             <span className="eyebrow">Agenda semanal</span>
-          </header>
-          <div className="plan-summary-grid">
-            <div><strong>{summary.plan.planned}</strong><small>Planejado</small></div>
-            <div className="done"><strong>{summary.plan.completed}</strong><small>Concluído</small></div>
-            <div className="pending"><strong>{summary.plan.pending}</strong><small>Pendente</small></div>
-            <div className="rest"><strong>{summary.plan.rest}</strong><small>Descanso</small></div>
+            {/* Os mesmos ícones da fileira de dias aparecem aqui ao lado do que
+                significam: a agenda ensina a leitura sem precisar de legenda. */}
+            <p className="progress-note">
+              <span className="progress-note-item">
+                <span className="progress-note-icon done"><Icon filled>check</Icon></span>
+                <strong>{summary.plan.planned}</strong>
+                {summary.plan.planned === 1 ? ' dia de treino' : ' dias de treino'}
+              </span>
+              {summary.plan.rest > 0 && (
+                <span className="progress-note-item">
+                  <span className="progress-note-icon rest"><Icon>self_improvement</Icon></span>
+                  <strong>{summary.plan.rest}</strong> de descanso
+                </span>
+              )}
+            </p>
+          </section>
+        )}
+
+        <section className="progress-block" aria-label="Constância">
+          <span className="eyebrow">Constância</span>
+          <div className="progress-stats">
+            {stats.map((stat) => (
+              <div key={stat.label} className="progress-stat">
+                <span className="progress-stat-icon"><Icon filled>{stat.icon}</Icon></span>
+                <strong>{stat.value}</strong>
+                <small>{stat.label}</small>
+              </div>
+            ))}
           </div>
         </section>
-      )}
 
-      <div className="progress-stats">
-        {stats.map((stat) => (
-          <div key={stat.label} className="progress-stat">
-            <span className="progress-stat-icon"><Icon filled>{stat.icon}</Icon></span>
-            <div>
-              <small>{stat.label}</small>
-              <strong>{stat.value}</strong>
-            </div>
-          </div>
-        ))}
+        <button type="button" className="button button-muted button-large" onClick={onEditGoal}>
+          <Icon>{goalFromSchedule ? 'event' : 'tune'}</Icon>
+          {goalFromSchedule ? 'Editar agenda da semana' : 'Alterar meta semanal'}
+        </button>
       </div>
-
-      <button type="button" className="button button-muted button-large" onClick={onEditGoal}>
-        <Icon>tune</Icon> Alterar meta semanal
-      </button>
     </Modal>
   );
 }

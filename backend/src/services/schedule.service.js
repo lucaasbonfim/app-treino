@@ -125,7 +125,19 @@ async function planSummary(userId, completedThisWeek) {
 
     const completed = Math.min(Number(completedThisWeek) || 0, planned);
     const pending = Math.max(planned - completed, 0);
-    return { planned, completed, pending, rest };
+    return {
+        planned,
+        completed,
+        pending,
+        rest,
+        // Formato de cada dia (0 = domingo) para a tela de progresso distinguir
+        // "não treinou" de "era dia de descanso" na fileira da semana.
+        days: days.map((day) => ({
+            day_of_week: day.day_of_week,
+            is_rest_day: day.is_rest_day,
+            has_workout: day.workouts.length > 0,
+        })),
+    };
 }
 
 // Versão enxuta de um dia para os vizinhos (ontem / amanhã) do card "Hoje".

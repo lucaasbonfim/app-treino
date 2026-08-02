@@ -2,25 +2,17 @@ const checkinRepository = require('../repositories/checkin.repository');
 const userRepository = require('../repositories/user.repository');
 const scheduleService = require('./schedule.service');
 const { integer } = require('../utils/validation');
+const { conflict } = require('../utils/httpError');
+const {
+    isoDate,
+    dateOnly,
+    addDays,
+    currentStreak,
+    bestStreak,
+} = require('../utils/streak');
 
 const WEEKDAY_LABELS = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
 const WEEKDAY_SHORT = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
-
-function isoDate(date) {
-    return date.toLocaleDateString('en-CA');
-}
-
-function dateOnly(value) {
-    const date = new Date(value);
-    date.setHours(0, 0, 0, 0);
-    return date;
-}
-
-function addDays(date, days) {
-    const result = new Date(date);
-    result.setDate(result.getDate() + days);
-    return result;
-}
 
 // Segunda-feira como início da semana.
 function startOfWeek(today) {
@@ -29,64 +21,76 @@ function startOfWeek(today) {
     return addDays(date, -offset);
 }
 
-function motivationalMessage(progressPercent, streak) {
-    if (progressPercent >= 100) return 'Meta semanal batida';
+// Quantos treinos ainda cabem na semana: os dias que restam até domingo,
+// descontando hoje quando o check-in de hoje já foi feito.
+function remainingOpportunities(today, todayCheckedIn) {
+    const daysLeft = 7 - ((dateOnly(today).getDay() + 6) % 7);
+    return Math.max(daysLeft - (todayCheckedIn ? 1 : 0), 0);
+}
+
+// A mensagem precisa saber quantos dias ainda cabem na semana: dizer "ainda dá
+// tempo" no domingo, com o treino do dia já feito, é falso.
+function motivationalMessage({ completed, goal, streak, opportunities }) {
+    const missing = Math.max(goal - completed, 0);
+    if (missing === 0) return 'Meta semanal batida';
+    if (opportunities === 0) return 'Semana encerrada. Bora pra próxima';
+    if (missing > opportunities) {
+        return opportunities === 1
+            ? 'Último dia da semana, bora treinar'
+            : 'A meta ficou apertada, mas todo treino conta';
+    }
+    if (completed === 0) return 'Bora começar a semana?';
     if (streak >= 3) return 'Sequência boa, mantém o foco';
-    if (progressPercent === 0) return 'Bora começar a semana?';
-    if (progressPercent < 50) return 'Ainda dá tempo de buscar a meta';
+    if (missing === opportunities) return 'Precisa treinar todos os dias que faltam';
     return 'Você tá no ritmo';
 }
 
-// Sequência atual: dias consecutivos com check-in terminando em hoje (ou ontem,
-// caso o treino de hoje ainda não tenha acontecido).
-function currentStreak(dateSet, today) {
-    let cursor = dateOnly(today);
-    if (!dateSet.has(isoDate(cursor))) {
-        cursor = addDays(cursor, -1);
-        if (!dateSet.has(isoDate(cursor))) return 0;
-    }
-    let streak = 0;
-    while (dateSet.has(isoDate(cursor))) {
-        streak += 1;
-        cursor = addDays(cursor, -1);
-    }
-    return streak;
-}
-
-// Maior sequência de dias consecutivos em todo o histórico.
-function bestStreak(sortedDates) {
-    let best = 0;
-    let run = 0;
-    let previous = null;
-    for (const iso of sortedDates) {
-        const current = dateOnly(iso);
-        if (previous && isoDate(addDays(previous, 1)) === iso) {
-            run += 1;
-        } else {
-            run = 1;
-        }
-        if (run > best) best = run;
-        previous = current;
-    }
-    return best;
-}
-
-function buildWeekDays(weekStart, dateSet, today) {
+// Estado de cada dia da semana, cruzando os check-ins com o formato da agenda.
+// "Não treinou" só vira falta quando havia treino planejado: marcar falta num
+// dia que a própria pessoa definiu como descanso é cobrança indevida.
+function buildWeekDays(weekStart, dateSet, today, planDays = []) {
     const todayIso = isoDate(dateOnly(today));
+    const shapeByDow = new Map(planDays.map((day) => [day.day_of_week, day]));
+
     return Array.from({ length: 7 }, (unused, index) => {
         const date = addDays(weekStart, index);
         const iso = isoDate(date);
-        let status = 'future';
+        const shape = shapeByDow.get(date.getDay()) || {};
+        const isRestDay = Boolean(shape.is_rest_day);
+        const hasWorkout = Boolean(shape.has_workout);
+
+        let status;
         if (dateSet.has(iso)) status = 'done';
+        else if (isRestDay) status = 'rest';
         else if (iso === todayIso) status = 'today';
-        else if (iso < todayIso) status = 'pending';
+        else if (iso > todayIso) status = 'future';
+        else status = hasWorkout ? 'missed' : 'free';
+
         return {
             date: iso,
             label: WEEKDAY_LABELS[index],
             short: WEEKDAY_SHORT[index],
             status,
+            is_today: iso === todayIso,
+            is_rest_day: isRestDay,
+            has_workout: hasWorkout,
         };
     });
+}
+
+// A meta fica gravada em users.weekly_goal_trainings mesmo quando é derivada:
+// o ranking entre amigos lê essa coluna direto, e derivar só aqui faria a Home
+// e o ranking mostrarem metas diferentes.
+async function syncGoalWithSchedule(userId, user, plannedDays) {
+    const stored = Number(user?.weekly_goal_trainings) || 3;
+    if (plannedDays <= 0) return stored;
+
+    // A coluna aceita de 1 a 7, que é exatamente o intervalo possível de dias.
+    const derived = Math.min(Math.max(plannedDays, 1), 7);
+    if (derived === stored) return stored;
+
+    await userRepository.update(userId, { weekly_goal_trainings: derived });
+    return derived;
 }
 
 async function weeklySummary(userId) {
@@ -95,7 +99,6 @@ async function weeklySummary(userId) {
         checkinRepository.findAllDates(userId),
     ]);
 
-    const goal = Number(user?.weekly_goal_trainings) || 3;
     const today = new Date();
     const weekStart = startOfWeek(today);
     const weekEnd = addDays(weekStart, 6);
@@ -104,22 +107,41 @@ async function weeklySummary(userId) {
     const weekStartIso = isoDate(weekStart);
     const weekEndIso = isoDate(weekEnd);
     const completed = allDates.filter((iso) => iso >= weekStartIso && iso <= weekEndIso).length;
+    const plan = await scheduleService.planSummary(userId, completed);
+
+    // Quem montou a agenda já disse quantos dias treina por semana: a meta passa
+    // a ser esse número em vez de um segundo valor que ninguém mantém em dia.
+    // Sem agenda (planned = 0) a meta continua sendo a escolhida na mão.
+    const goal = await syncGoalWithSchedule(userId, user, plan.planned);
+    const goalSource = plan.planned > 0 ? 'schedule' : 'manual';
+
     const progressPercent = goal > 0 ? Math.min(100, Math.round((completed / goal) * 100)) : 0;
     const streak = currentStreak(dateSet, today);
-    const plan = await scheduleService.planSummary(userId, completed);
+    const todayCheckedIn = dateSet.has(isoDate(dateOnly(today)));
+    const opportunities = remainingOpportunities(today, todayCheckedIn);
 
     return {
         goal,
+        goal_source: goalSource,
         completed,
         progress_percent: progressPercent,
         streak,
         best_streak: bestStreak(allDates),
-        today_checked_in: dateSet.has(isoDate(dateOnly(today))),
+        today_checked_in: todayCheckedIn,
+        days_left: opportunities,
         week_start: weekStartIso,
         week_end: weekEndIso,
-        week_days: buildWeekDays(weekStart, dateSet, today),
-        plan,
-        message: motivationalMessage(progressPercent, streak),
+        week_days: buildWeekDays(weekStart, dateSet, today, plan.days),
+        // `days` alimenta o cálculo acima; o resumo em si só precisa dos totais.
+        plan: {
+            planned: plan.planned,
+            completed: plan.completed,
+            pending: plan.pending,
+            rest: plan.rest,
+        },
+        message: motivationalMessage({
+            completed, goal, streak, opportunities,
+        }),
     };
 }
 
@@ -159,6 +181,16 @@ async function createManualCheckin(userId) {
 
 async function updateWeeklyGoal(userId, payload) {
     const goal = integer(payload.weekly_goal_trainings, 'Meta semanal', { min: 1, max: 7 });
+
+    // Com agenda montada a meta é derivada dela. Aceitar um valor manual aqui
+    // seria enganoso: a próxima abertura da Home sobrescreveria em silêncio.
+    const plan = await scheduleService.planSummary(userId, 0);
+    if (plan.planned > 0) {
+        throw conflict(
+            'Sua meta acompanha a agenda semanal. Edite os dias de treino na agenda para mudá-la.',
+        );
+    }
+
     const user = await userRepository.update(userId, { weekly_goal_trainings: goal });
     return { weekly_goal_trainings: user.weekly_goal_trainings };
 }
@@ -175,6 +207,9 @@ function checkinFromSession(userId, sessionId, connection) {
 }
 
 module.exports = {
+    motivationalMessage,
+    remainingOpportunities,
+    buildWeekDays,
     weeklySummary,
     monthlyCheckins,
     createManualCheckin,

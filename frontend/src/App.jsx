@@ -13,6 +13,7 @@ import Profile from './pages/Profile';
 import WorkoutRun from './pages/WorkoutRun';
 import WorkoutHistory from './pages/WorkoutHistory';
 import ArchivedWorkouts from './pages/ArchivedWorkouts';
+import Friends from './pages/Friends';
 
 export default function App() {
   return (
@@ -34,6 +35,7 @@ export default function App() {
         <Route path="/agenda" element={<Agenda />} />
         <Route path="/schedule" element={<Navigate to="/agenda" replace />} />
         <Route path="/history" element={<WorkoutHistory />} />
+        <Route path="/friends" element={<Friends />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

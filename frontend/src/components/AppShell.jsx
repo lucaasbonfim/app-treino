@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/auth-context';
 import { useTheme } from '../contexts/theme-context';
+import { apiCache, friendService } from '../services';
 import Icon from './Icon';
 import ProfileDrawer from './ProfileDrawer';
 
@@ -16,6 +17,7 @@ export default function AppShell({
   const { user } = useAuth();
   const { dark, toggleTheme } = useTheme();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [pendingRequests, setPendingRequests] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
   const path = location.pathname;
@@ -23,8 +25,35 @@ export default function AppShell({
   const isWorkouts = path.startsWith('/workouts');
   const isHistory = path === '/history';
   const isAgenda = path === '/agenda';
+  const isFriends = path === '/friends';
   const isProfile = path === '/profile';
   const isMainTab = isHome || path === '/workouts';
+
+  // Sem esse contador ninguém descobre que recebeu um pedido de amizade. A
+  // resposta fica em cache, então não vira uma requisição por tela aberta —
+  // e responder a um pedido limpa o cache, o que dispara a recontagem aqui.
+  useEffect(() => {
+    if (hideNav) return undefined;
+    let active = true;
+
+    const count = () => {
+      friendService.requests()
+        .then(({ data }) => {
+          if (active) setPendingRequests(data?.received?.length || 0);
+        })
+        .catch(() => {});
+    };
+
+    const unsubscribe = apiCache.subscribe((detail) => {
+      if (detail.type === 'clear') count();
+    });
+    count();
+
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, [hideNav, path]);
 
   return (
     <div className={`app-frame ${hideNav ? 'without-nav' : ''}`}>
@@ -46,6 +75,11 @@ export default function AppShell({
             <Link className={isAgenda ? 'active' : ''} to="/agenda">
               <Icon filled={isAgenda}>event</Icon>
               <span>Agenda</span>
+            </Link>
+            <Link className={isFriends ? 'active' : ''} to="/friends">
+              <Icon filled={isFriends}>groups</Icon>
+              <span>Amigos</span>
+              {pendingRequests > 0 && <span className="nav-badge">{pendingRequests}</span>}
             </Link>
             <Link className={isHistory ? 'active' : ''} to="/history">
               <Icon filled={isHistory}>history</Icon>
@@ -97,6 +131,11 @@ export default function AppShell({
           <Link className={isWorkouts ? 'active' : ''} to="/workouts">
             <Icon filled={isWorkouts}>view_agenda</Icon>
             <span>Meus treinos</span>
+          </Link>
+          <Link className={isFriends ? 'active' : ''} to="/friends">
+            <Icon filled={isFriends}>groups</Icon>
+            <span>Amigos</span>
+            {pendingRequests > 0 && <span className="nav-badge">{pendingRequests}</span>}
           </Link>
           <Link className={path === '/history' ? 'active' : ''} to="/history">
             <Icon filled={path === '/history'}>history</Icon>

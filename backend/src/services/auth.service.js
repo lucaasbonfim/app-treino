@@ -5,6 +5,7 @@ const userRepository = require('../repositories/user.repository');
 const verificationRepository = require('../repositories/emailVerification.repository');
 const { sendVerificationCodeEmail, sendEmailChangeCode } = require('./email.service');
 const { requiredText } = require('../utils/validation');
+const { validateUsername, slugifyUsername, withSuffix } = require('../utils/username');
 const {
     HttpError,
     badRequest,
@@ -35,9 +36,44 @@ function authResponse(user) {
             id: user.id,
             name: user.name,
             email: user.email,
+            username: user.username,
             weekly_goal_trainings: user.weekly_goal_trainings ?? 3,
         },
     };
+}
+
+// O @ inicial sai do e-mail e pode ser trocado depois no perfil: ninguém é
+// obrigado a parar no meio do cadastro para escolher um nome de usuário.
+async function buildUsername(seed) {
+    const base = slugifyUsername(seed);
+    const taken = new Set(await userRepository.findUsernamesStartingWith(base));
+    if (!taken.has(base)) return base;
+    for (let suffix = 2; suffix < 1000; suffix += 1) {
+        const candidate = withSuffix(base, suffix);
+        if (!taken.has(candidate)) return candidate;
+    }
+    return withSuffix(base, crypto.randomInt(1000, 100000));
+}
+
+// Duas contas criadas ao mesmo tempo podem escolher o mesmo @: o índice único
+// barra a segunda, então vale tentar de novo com outro sufixo.
+async function createUserWithUsername({ name, email, password }) {
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+        const seed = attempt === 0 ? email.split('@')[0] || name : `${email.split('@')[0]}${crypto.randomInt(10, 1000)}`;
+        try {
+            return await userRepository.create({
+                name,
+                email,
+                password,
+                username: await buildUsername(seed),
+            });
+        } catch (error) {
+            const isUsernameClash = error.code === '23505'
+                && String(error.constraint ?? '').includes('username');
+            if (!isUsernameClash) throw error;
+        }
+    }
+    throw new HttpError(503, 'Não foi possível criar sua conta agora. Tente novamente.');
 }
 
 function validateRegistration(payload) {
@@ -115,7 +151,7 @@ async function verifyRegisterCode(payload) {
         throw conflict('Este e-mail já está em uso.');
     }
 
-    const user = await userRepository.create({
+    const user = await createUserWithUsername({
         name: pending.name,
         email,
         password: pending.password_hash,
@@ -189,6 +225,16 @@ async function updateName(userId, payload) {
     const name = requiredText(payload.name, 'Nome', 100);
     const user = await userRepository.update(userId, { name });
     return { message: 'Nome atualizado com sucesso.', user };
+}
+
+async function updateUsername(userId, payload) {
+    const username = validateUsername(payload.username);
+    const existing = await userRepository.findByUsername(username);
+    if (existing && existing.id !== userId) throw conflict('Este nome de usuário já está em uso.');
+    if (existing) return { message: 'Nome de usuário atualizado com sucesso.', user: existing };
+
+    const user = await userRepository.update(userId, { username });
+    return { message: 'Nome de usuário atualizado com sucesso.', user };
 }
 
 async function changePassword(userId, payload) {
@@ -276,6 +322,7 @@ module.exports = {
     login,
     googleLogin,
     updateName,
+    updateUsername,
     changePassword,
     requestEmailChange,
     confirmEmailChange,
