@@ -10,6 +10,7 @@ export const authService = {
   verifyRegisterCode: (data) => runMutation(() => api.post('/auth/register/verify', data)),
   me: () => cachedGet('/auth/me'),
   updateName: (data) => runMutation(() => api.put('/auth/name', data)),
+  updateUsername: (data) => runMutation(() => api.put('/auth/username', data)),
   changePassword: (data) => runMutation(() => api.post('/auth/change-password', data)),
   requestEmailChange: (data) => runMutation(() => api.post('/auth/email/request', data)),
   confirmEmailChange: (data) => runMutation(() => api.post('/auth/email/confirm', data)),
@@ -55,6 +56,17 @@ export const scheduleService = {
   removeDay: (dayOfWeek) => runMutation(() => api.delete(`/schedule/${dayOfWeek}`)),
   setWorkoutDays: (workoutId, days) => runMutation(() => api.put(`/schedule/workout/${workoutId}`, { days })),
   startDay: (dayOfWeek) => runMutation(() => api.post(`/schedule/${dayOfWeek}/sessions`)),
+};
+
+export const friendService = {
+  list: (options) => cachedGet('/friends', {}, options),
+  requests: (options) => cachedGet('/friends/requests', {}, options),
+  ranking: (month, options) => cachedGet('/friends/ranking', month ? { params: { month } } : {}, options),
+  // Busca não entra no cache: o 404 de "@ não existe" é resposta esperada aqui.
+  search: (username) => api.get('/friends/search', { params: { username } }),
+  sendRequest: (data) => runMutation(() => api.post('/friends/requests', data)),
+  respondRequest: (id, action) => runMutation(() => api.patch(`/friends/requests/${id}`, { action })),
+  remove: (userId) => runMutation(() => api.delete(`/friends/${userId}`)),
 };
 
 export const exerciseLibraryService = {

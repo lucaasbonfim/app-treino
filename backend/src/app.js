@@ -14,6 +14,7 @@ const exerciseLibraryRoutes = require('./routes/exerciseLibrary.routes');
 const workoutSessionRoutes = require('./routes/workoutSession.routes');
 const progressRoutes = require('./routes/progress.routes');
 const scheduleRoutes = require('./routes/schedule.routes');
+const friendRoutes = require('./routes/friend.routes');
 const aiRoutes = require('./routes/ai.routes');
 const { notFound, errorHandler } = require('./middlewares/error.middleware');
 
@@ -72,6 +73,7 @@ app.use(`${API}/exercise-library`, exerciseLibraryRoutes);
 app.use(`${API}/workout-sessions`, workoutSessionRoutes);
 app.use(`${API}/progress`, progressRoutes);
 app.use(`${API}/schedule`, scheduleRoutes);
+app.use(`${API}/friends`, friendRoutes);
 app.use(`${API}/ai`, aiRoutes);
 
 app.use(notFound);

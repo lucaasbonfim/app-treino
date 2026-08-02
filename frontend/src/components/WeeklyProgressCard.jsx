@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Icon from './Icon';
 import ProgressBar from './ProgressBar';
 import CheckinButton from './CheckinButton';
@@ -12,6 +13,7 @@ export default function WeeklyProgressCard() {
   const [checkingIn, setCheckingIn] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [goalOpen, setGoalOpen] = useState(false);
+  const navigate = useNavigate();
 
   const refresh = useCallback(async () => {
     const [summaryResult, monthlyResult] = await Promise.allSettled([
@@ -22,12 +24,15 @@ export default function WeeklyProgressCard() {
     if (monthlyResult.status === 'fulfilled') setMonthly(monthlyResult.value.data);
   }, []);
 
+  // O estado inicial já pinta na hora a partir do cache; aqui a busca é sempre
+  // forçada porque este resumo depende de que dia é hoje — uma cópia guardada
+  // (o cache vale 24h) mostraria o dia, a sequência e a mensagem de ontem.
   useEffect(() => {
     let active = true;
-    progressService.weeklySummary()
+    progressService.weeklySummary({ force: true })
       .then(({ data }) => { if (active) setSummary(data); })
       .catch(() => {});
-    progressService.monthlyCheckins()
+    progressService.monthlyCheckins({ force: true })
       .then(({ data }) => { if (active) setMonthly(data); })
       .catch(() => {});
     return () => { active = false; };
@@ -53,14 +58,17 @@ export default function WeeklyProgressCard() {
   if (!summary) return null;
 
   const streakLabel = `${summary.streak} ${summary.streak === 1 ? 'dia' : 'dias'}`;
+  // Com agenda montada a meta vem dela, então editar a meta = editar a agenda.
+  const goalFromSchedule = summary.goal_source === 'schedule';
+  const openGoalEditor = () => (goalFromSchedule ? navigate('/agenda') : setGoalOpen(true));
 
   return (
     <>
       <section className="weekly-card">
         <header className="weekly-head">
           <span className="eyebrow">Esta semana</span>
-          <button type="button" className="weekly-goal-chip" onClick={() => setGoalOpen(true)}>
-            <Icon>target</Icon> Meta: {summary.goal}
+          <button type="button" className="weekly-goal-chip" onClick={openGoalEditor}>
+            <Icon>{goalFromSchedule ? 'event' : 'target'}</Icon> Meta: {summary.goal}
           </button>
         </header>
 
@@ -94,7 +102,7 @@ export default function WeeklyProgressCard() {
           summary={summary}
           monthly={monthly}
           onClose={() => setDetailsOpen(false)}
-          onEditGoal={() => { setDetailsOpen(false); setGoalOpen(true); }}
+          onEditGoal={() => { setDetailsOpen(false); openGoalEditor(); }}
         />
       )}
       {goalOpen && (

@@ -10,6 +10,7 @@ router.post('/login', controller.login);
 router.post('/google', controller.googleLogin);
 router.get('/me', auth, controller.me);
 router.put('/name', auth, controller.updateName);
+router.put('/username', auth, controller.updateUsername);
 router.post('/change-password', auth, controller.changePassword);
 router.post('/email/request', auth, controller.requestEmailChange);
 router.post('/email/confirm', auth, controller.confirmEmailChange);

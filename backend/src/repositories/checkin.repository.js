@@ -37,9 +37,23 @@ async function findAllDates(userId, connection = db) {
     return rows.map((row) => row.checkin_date);
 }
 
+// Datas de várias pessoas de uma vez, usadas para calcular a sequência de cada
+// participante do ranking sem uma query por amigo.
+async function findDatesForUsers(userIds, start, end, connection = db) {
+    if (!userIds.length) return [];
+    const rows = await connection('workout_checkins')
+        .whereIn('user_id', userIds)
+        .andWhere('checkin_date', '>=', start)
+        .andWhere('checkin_date', '<=', end)
+        .select('user_id', DATE_COLUMN)
+        .orderBy('checkin_date', 'asc');
+    return rows;
+}
+
 module.exports = {
     findByUserAndDate,
     insertIgnore,
     findDatesInRange,
     findAllDates,
+    findDatesForUsers,
 };

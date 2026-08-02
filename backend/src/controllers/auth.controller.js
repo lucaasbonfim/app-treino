@@ -24,6 +24,10 @@ async function updateName(req, res) {
     res.json(await service.updateName(req.user.id, req.body));
 }
 
+async function updateUsername(req, res) {
+    res.json(await service.updateUsername(req.user.id, req.body));
+}
+
 async function changePassword(req, res) {
     res.json(await service.changePassword(req.user.id, req.body));
 }
@@ -43,6 +47,7 @@ module.exports = {
     googleLogin,
     me,
     updateName,
+    updateUsername,
     changePassword,
     requestEmailChange,
     confirmEmailChange,

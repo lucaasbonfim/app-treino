@@ -20,6 +20,11 @@ export default function Profile() {
   const [nameMessage, setNameMessage] = useState('');
   const [nameError, setNameError] = useState('');
 
+  const [username, setUsername] = useState(user?.username || '');
+  const [usernameSaving, setUsernameSaving] = useState(false);
+  const [usernameMessage, setUsernameMessage] = useState('');
+  const [usernameError, setUsernameError] = useState('');
+
   const [emailStep, setEmailStep] = useState('closed');
   const [newEmail, setNewEmail] = useState('');
   const [emailPassword, setEmailPassword] = useState('');
@@ -48,6 +53,23 @@ export default function Profile() {
       setNameError(errorMessage(requestError, 'Não foi possível atualizar o nome.'));
     } finally {
       setNameSaving(false);
+    }
+  };
+
+  const saveUsername = async (event) => {
+    event.preventDefault();
+    setUsernameSaving(true);
+    setUsernameMessage('');
+    setUsernameError('');
+    try {
+      const { data } = await authService.updateUsername({ username });
+      updateUser(data.user);
+      setUsername(data.user.username);
+      setUsernameMessage(data.message);
+    } catch (requestError) {
+      setUsernameError(errorMessage(requestError, 'Não foi possível atualizar o nome de usuário.'));
+    } finally {
+      setUsernameSaving(false);
     }
   };
 
@@ -123,6 +145,7 @@ export default function Profile() {
         <span className="profile-avatar">{initials(user?.name)}</span>
         <div>
           <h2>{user?.name}</h2>
+          {user?.username && <p className="profile-username">@{user.username}</p>}
           <p>{user?.email}</p>
         </div>
       </section>
@@ -153,6 +176,37 @@ export default function Profile() {
           {nameError && <p className="error-banner">{nameError}</p>}
           <button className="button button-primary" type="submit" disabled={nameSaving || name.trim() === user?.name}>
             {nameSaving ? 'Salvando...' : 'Salvar nome'}
+          </button>
+        </form>
+
+        <div className="profile-divider" />
+
+        <form className="form-stack profile-form-block" onSubmit={saveUsername}>
+          <label className="field">
+            <span>Nome de usuário</span>
+            <div className="username-field">
+              <span aria-hidden="true">@</span>
+              <input
+                required
+                minLength={3}
+                maxLength={20}
+                value={username}
+                onChange={(event) => setUsername(event.target.value.toLowerCase().replace(/[^a-z0-9._]/g, ''))}
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck="false"
+              />
+            </div>
+          </label>
+          <p className="field-hint">É por esse @ que seus amigos te encontram.</p>
+          {usernameMessage && <p className="success-banner">{usernameMessage}</p>}
+          {usernameError && <p className="error-banner">{usernameError}</p>}
+          <button
+            className="button button-primary"
+            type="submit"
+            disabled={usernameSaving || username.trim() === user?.username}
+          >
+            {usernameSaving ? 'Salvando...' : 'Salvar @'}
           </button>
         </form>
 
